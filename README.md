@@ -2,17 +2,18 @@
 
 A tiny mobile-friendly React app. It reads one greeting from Supabase; visitors cannot write to the database. No server hosting or paid Supabase features are needed.
 
+The app is connected to the dedicated **IDidTheDishes** Supabase Free project (`oqciivgizvuzuxxzhglq`). Its greeting table and read-only row-level security policy have been created. `src/supabase-config.json` contains the public project URL and browser-safe publishable key; these are intentionally public. No service-role or secret keys are included.
+
 ## Local development in Visual Studio Code
 
 Install Node.js 22.12 or newer and pnpm 11.25.0 if they are not already on your PATH.
 
 ```sh
 pnpm install
-cp .env.example .env.local
 pnpm dev
 ```
 
-On Windows PowerShell, use `Copy-Item .env.example .env.local` for the copy command. Edit `.env.local` with your project's URL and **publishable** key from the Supabase Connect panel, then restart the dev server. The site works before configuration and shows a setup message.
+The checked-in public configuration works without an environment file. To use a different project, edit `src/supabase-config.json`, or copy `.env.example` to `.env.local` and fill in both values. Environment values override the public configuration. Restart the dev server after changing them.
 
 ## Supabase
 
@@ -30,7 +31,7 @@ Only a publishable key belongs in this frontend. Vite embeds `VITE_*` values int
 Target repository: https://github.com/TheRealBiebs/IDidTheDishes
 
 1. Push this project to the repository's `main` branch.
-2. Under **Settings → Secrets and variables → Actions → Variables**, create these repository variables:
+2. The checked-in public configuration is sufficient. To override it, optionally create these repository variables under **Settings → Secrets and variables → Actions → Variables**:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
 3. Under **Settings → Pages → Build and deployment**, select **GitHub Actions**.
@@ -38,7 +39,7 @@ Target repository: https://github.com/TheRealBiebs/IDidTheDishes
 
 Expected URL after a successful deployment: https://therealbiebs.github.io/IDidTheDishes/
 
-The workflow intentionally fails with a clear message if either Supabase variable is missing. Values are baked in at build time: after changing them, rerun the workflow. `base: './'` supports GitHub Pages repository subpaths. This starter has one page and no client-side routes.
+Configuration is baked in at build time: after changing it, rerun the workflow. `base: './'` supports GitHub Pages repository subpaths. This starter has one page and no client-side routes.
 
 ## Build
 

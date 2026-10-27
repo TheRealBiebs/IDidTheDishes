@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
+import publicConfig from './supabase-config.json'
 
-const url = import.meta.env.VITE_SUPABASE_URL?.trim()
-const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
+const url = import.meta.env.VITE_SUPABASE_URL?.trim() || publicConfig.url
+const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || publicConfig.publishableKey
 let client = null
 let configurationError = ''
 

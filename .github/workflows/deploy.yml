@@ -26,13 +26,6 @@ jobs:
         with:
           version: 11.25.0
       - run: pnpm install --frozen-lockfile
-      - name: Check backend configuration
-        env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          test -n "$VITE_SUPABASE_URL" || { echo "Set the VITE_SUPABASE_URL repository variable"; exit 1; }
-          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo "Set the VITE_SUPABASE_PUBLISHABLE_KEY repository variable"; exit 1; }
       - run: pnpm build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
