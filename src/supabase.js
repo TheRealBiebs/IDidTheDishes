@@ -9,7 +9,7 @@ let configurationError = ''
 if (url && key && !url.includes('YOUR_PROJECT') && !key.includes('YOUR_PUBLISHABLE_KEY')) {
   try {
     client = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
     })
   } catch {
     configurationError = 'Check the Supabase project URL and publishable key, then restart the app.'

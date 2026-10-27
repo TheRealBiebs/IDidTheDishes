@@ -1,53 +1,83 @@
-# Hello, world — React + Supabase + GitHub Pages
+# I Did The Dishes
 
-A tiny mobile-friendly React app. It reads one greeting from Supabase; visitors cannot write to the database. No server hosting or paid Supabase features are needed.
+A mobile-friendly household chore app using React, Supabase, and GitHub Pages.
 
-The app is connected to the dedicated **IDidTheDishes** Supabase Free project (`oqciivgizvuzuxxzhglq`). Its greeting table and read-only row-level security policy have been created. `src/supabase-config.json` contains the public project URL and browser-safe publishable key; these are intentionally public. No service-role or secret keys are included.
+Live: https://therealbiebs.github.io/IDidTheDishes/
 
-## Local development in Visual Studio Code
+## Develop in VS Code
 
-Install Node.js 22.12 or newer. npm comes with Node.js.
+Use Node.js 22.12 or newer. npm comes with Node.js.
 
 ```sh
 npm install
 npm run dev
 ```
 
-The checked-in public configuration works without an environment file. To use a different project, edit `src/supabase-config.json`, or copy `.env.example` to `.env.local` and fill in both values. Environment values override the public configuration. Restart the dev server after changing them.
-
-## Supabase
-
-1. Use an existing project on the Free plan, or create a Free project at https://supabase.com/dashboard.
-2. Open SQL Editor and run `supabase/schema.sql`.
-3. Fill `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local`.
-4. Reload the site. The status should say **Connected to Supabase**.
-
-To prove the backend is connected, edit row 1 in the `greetings` table, then click **Refresh greeting**. You can change it back to `Hello, world.` afterward.
-
-Only a publishable key belongs in this frontend. Vite embeds `VITE_*` values into public JavaScript. Never use a secret or service-role key. The included schema enables row-level security and grants visitors SELECT only. Run it against the intended project; it creates or configures the demo `public.greetings` table. Free project quotas and inactivity behavior remain subject to Supabase's current plan.
-
-## GitHub Pages
-
-Target repository: https://github.com/TheRealBiebs/IDidTheDishes
-
-1. Push this project to the repository's `main` branch.
-2. The checked-in public configuration is sufficient. To override it, optionally create these repository variables under **Settings → Secrets and variables → Actions → Variables**:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`
-3. Under **Settings → Pages → Build and deployment**, select **GitHub Actions**.
-4. Run **Deploy to GitHub Pages** from the Actions tab, or push a change to `main`.
-
-Expected URL after a successful deployment: https://therealbiebs.github.io/IDidTheDishes/
-
-Configuration is baked in at build time: after changing it, rerun the workflow. `base: './'` supports GitHub Pages repository subpaths. This starter has one page and no client-side routes.
-
-## Build
+Open the local URL printed in the terminal. Saved changes update the development preview.
 
 ```sh
 npm run build
 npm run preview
 ```
 
-The deployable static output is `dist/`. `package-lock.json` pins the installed dependencies; GitHub Actions uses `npm ci` to install those exact versions.
+The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every push to `main`.
 
-References: [Supabase React guide](https://supabase.com/docs/guides/getting-started/quickstarts/reactjs), [Supabase row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [Vite GitHub Pages deployment](https://vite.dev/guide/static-deploy#github-pages).
+## First household
+
+1. Create an account and confirm your email. Sign in once on each browser/device; sessions persist until sign-out or browser storage/session expiry.
+2. Create a household with its name, your display name, and the household time zone. A user can belong to multiple households.
+3. Start by setting up one or more chore stickers. Household owners manage sticker settings: chore name, location, points, a household-wide daily limit, eligible members, and active/paused state.
+4. Open a sticker’s settings and write its unique HTTPS URL as an NDEF **URL record** onto an NFC sticker. Supported Android browsers offer **Write NFC sticker**. On iPhone, copy the URL into an NFC-writing app. Choose rewritable NDEF stickers and test your phone/tag combination before deploying them around the house.
+5. Share the household invitation link. Invitations can be replaced by the owner; an old link then stops working. Anyone with a valid link can join, so share privately.
+6. Tap a programmed sticker, open the phone’s NFC link prompt, and the app logs the chore for the signed-in user. If signed out, the pending tag remains in the URL until sign-in. Browsers cannot prove a physical scan: opening a copied sticker URL also counts.
+7. View household points and chore counts for the current Monday-based week, today’s totals, recent activity, and a private notification inbox.
+
+NFC links use query parameters rather than path routing so they work on GitHub Pages. Settings changes keep the sticker URL stable. A new sticker gets a separate token.
+
+The database enforces authorization, points, timestamps, and daily limits. It locks the sticker row while recording a completion, so concurrent scans cannot exceed the household limit. A request ID makes retries idempotent; a 30-second per-user/tag cooldown protects against repeated phone reads. Limits reset at midnight in the household’s configured time zone. Historical points and chore names remain snapshots even after settings change.
+
+## Phone notifications
+
+Open **Your household → Enable phone notifications** on each device. A successful chore creates an inbox notification for every *other* member and queues a push for their opted-in devices.
+
+On iPhone/iPad, Web Push requires a supported iOS/iPadOS version (16.4+) and adding the site to the **Home Screen**, opening it from there, and granting notifications. On other platforms, use a browser with Web Push support. NFC links may open the regular browser rather than the Home Screen app; those contexts may require separate sign-ins. Device permissions, Focus modes, network state, and OS/browser policies affect delivery.
+
+`public/sw.js` handles background push and notification clicks. The service worker does not cache private household data and does not provide offline chore logging. A successful online server response is required before points are awarded.
+
+The `chore-push` Supabase Edge Function uses standard Web Push/VAPID. It authenticates database requests with a random webhook secret. VAPID private keys and that secret are stored in **Supabase Vault**, never in browser code or Git. Only the service role can retrieve the runtime secrets. The public key lives in `src/push-config.json`.
+
+Notification jobs wake the sender immediately via `pg_net`; `pg_cron` retries pending work every minute with exponential backoff (up to five attempts). Expired subscriptions are removed. Push delivery is best effort; inbox notifications remain available. The queue retries may occasionally duplicate a push after an interrupted delivery; notification IDs are stable to let the service worker replace duplicates.
+
+## Supabase setup and configuration
+
+Project: **IDidTheDishes** (`oqciivgizvuzuxxzhglq`) on the Free plan.
+
+The existing live project already has the schema, Realtime publication, Vault secrets, retry schedule, and Edge Function deployed. Do not rerun schema files against it.
+
+The SQL sources are `supabase/app-schema.sql`, `supabase/dashboard.sql`, and `supabase/push-hardening.sql`; Supabase migration history records the applied changes. The legacy `supabase/schema.sql` is only the old hello-world demo.
+
+Auth URL configuration:
+
+- Site URL: `https://therealbiebs.github.io/IDidTheDishes/`
+- Allowed redirect: `https://therealbiebs.github.io/IDidTheDishes/`
+- Development redirect: `http://127.0.0.1:5173/**`
+
+**Remaining setup: custom SMTP.** Supabase’s default mail service only delivers to project-team addresses and has a small rate limit. Configure custom SMTP under Supabase Auth before inviting ordinary household users; sign-up confirmations and password resets depend on it. Email confirmations remain enabled. See [Supabase SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp).
+
+`src/supabase-config.json` contains the intentionally public project URL and publishable key. Optional `.env.local` values `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` override them. Vite embeds these into public JavaScript: never use secret/service-role keys in `VITE_*` variables.
+
+Every exposed household table has RLS. Browser roles receive SELECT access only and use validated RPCs for mutations. Privileged functions live in the non-exposed `app_private` schema behind security-invoker public wrappers. Invites, push jobs, and Vault secrets are not browser-readable. The household owner configures tags; membership and authorization never depend on editable user metadata.
+
+The Edge Function source is `supabase/functions/chore-push/index.ts`. Deploy through Supabase with gateway JWT verification disabled because the handler itself authenticates the database webhook secret; anonymous requests receive 401. The function uses the automatically supplied `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` server environment variables.
+
+## Future Android and iPhone apps
+
+No native project or App Store packaging is included. React, Supabase’s HTTPS APIs, and the SQL RPCs can be reused in a future Capacitor app. Browser NFC and Web Push are isolated in `src/platform.js`; native NFC, deep links, secure session storage, and APNs/FCM adapters will require platform work later. Physical URL stickers can remain the entry point. Web Push subscriptions are browser-specific and are not a substitute for native push tokens.
+
+## Verification
+
+The first application release was exercised with disposable QA accounts and two isolated households. Tests covered real password login, household creation/joining, invitation rotation, owner-only settings, cross-household isolation, server-owned awards, eligible members, paused tags, simultaneous scans at the daily limit, idempotency, duplicate-read cooldown, unchanged historical points, dashboard aggregates, inbox recipients, and secret access restrictions.
+
+Browser checks covered desktop/mobile layouts, sticker create/edit, invitation dialogs, automatic URL-triggered logging, and persisted sessions. The database-to-worker webhook and encrypted push path were tested against a deliberately invalid test endpoint; expired subscriptions were removed. Actual NFC hardware and background delivery to a real phone still require an opted-in device test. Temporary QA data is removed before handoff.
+
+References: [Supabase Auth](https://supabase.com/docs/guides/auth), [Row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [Apple NFC URL reading](https://developer.apple.com/documentation/corenfc/adding-support-for-background-tag-reading), [WebKit Web Push](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/), [Capacitor](https://capacitorjs.com/docs).
