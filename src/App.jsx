@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, configurationError } from './supabase'
 import { api, rpc } from './api'
+import { restoreGoogleDestination, signInWithGoogle } from './google-auth'
 import { disablePush, enablePush, hasPush, inviteLink, scanSticker, siteRoot, tagLink, writeSticker } from './platform'
 import './styles.css'
 
@@ -55,6 +56,11 @@ function Modal({ title, children, onClose, wide = false }) {
 
 function Auth({ onMessage, invite }) {
   const [mode,setMode]=useState('login'), [busy,setBusy]=useState(false), [error,setError]=useState(''), [notice,setNotice]=useState('')
+  async function googleSignIn() {
+    setBusy(true); setError(''); setNotice('')
+    try { await signInWithGoogle() }
+    catch (e) { setError(e.message || 'Google sign-in could not start. Please try again.'); setBusy(false) }
+  }
   async function submit(e) {
     e.preventDefault();setBusy(true);setError('');setNotice('')
     const values = Object.fromEntries(new FormData(e.currentTarget))
@@ -74,8 +80,9 @@ function Auth({ onMessage, invite }) {
       }
     } catch (e) { setError(e.message || 'Unable to sign in. Please try again.') } finally { setBusy(false) }
   }
-  return <div className="auth-page"><div className="auth-story"><Brand /><div className="auth-copy"><span className="eyebrow light">A LITTLE TEAMWORK GOES A LONG WAY</span><h1>Less keeping score.<br /><em>More sharing<br />the load.</em></h1><p>A tap for the dishes. A little credit for the laundry.<br />Make everyday chores a win for your whole household.</p><div className="auth-illustration" aria-hidden="true"><div className="plate"><Icon name="check" size={68}/></div><div className="floating-note"><span className="avatar lime">✓</span><div><strong>One less thing to do.</strong><small>One more reason to say thanks.</small></div><span>✦</span></div></div></div><p className="auth-bottom">Little chores. Shared wins.</p></div><main className="auth-form-wrap"><div className="auth-form"><div className="mobile-brand"><Brand /></div><span className="eyebrow">WELCOME HOME</span><h2>{mode==='signup'?'A fresh start for your household.':mode==='reset'?'Let’s get you back in.':'Good to see you.'}</h2><p className="muted">{invite?'Your household invitation will be waiting after you sign in.':mode==='signup'?'Create your account, then bring everyone together.':'Sign in to your little corner of a tidier world.'}</p><form onSubmit={submit}>{mode==='signup'&&<label>Your name<input name="name" autoComplete="name" placeholder="What should we call you?" required maxLength={60}/></label>}<label>Email address<input name="email" type="email" autoComplete="email" placeholder="you@example.com" required/></label>{mode!=='reset'&&<label>Password<input name="password" type="password" autoComplete={mode==='signup'?'new-password':'current-password'} placeholder="Your password" required minLength={mode==='signup'?8:1}/></label>}{error&&<p className="form-error" role="alert">{error}</p>}{notice&&<p className="form-notice" role="status">{notice}</p>}<button className="button full" disabled={busy}>{busy?'One moment…':mode==='signup'?'Create account':mode==='reset'?'Send reset link':'Sign in'}<Icon name="arrow"/></button></form><div className="auth-links">{mode==='login'?<><button onClick={()=>{setMode('signup');setError('');setNotice('')}}>New here? Create an account</button><button onClick={()=>{setMode('reset');setError('');setNotice('')}}>Forgot password?</button></>:<button onClick={()=>{setMode('login');setError('');setNotice('')}}>Back to sign in</button>}</div><p className="privacy-note"><Icon name="home" size={15}/>Your household’s activity stays in your household.</p></div></main></div>
+  return <div className="auth-page"><div className="auth-story"><Brand /><div className="auth-copy"><span className="eyebrow light">A LITTLE TEAMWORK GOES A LONG WAY</span><h1>Less keeping score.<br /><em>More sharing<br />the load.</em></h1><p>A tap for the dishes. A little credit for the laundry.<br />Make everyday chores a win for your whole household.</p><div className="auth-illustration" aria-hidden="true"><div className="plate"><Icon name="check" size={68}/></div><div className="floating-note"><span className="avatar lime">✓</span><div><strong>One less thing to do.</strong><small>One more reason to say thanks.</small></div><span>✦</span></div></div></div><p className="auth-bottom">Little chores. Shared wins.</p></div><main className="auth-form-wrap"><div className="auth-form"><div className="mobile-brand"><Brand /></div><span className="eyebrow">WELCOME HOME</span><h2>{mode==='signup'?'A fresh start for your household.':mode==='reset'?'Let’s get you back in.':'Good to see you.'}</h2><p className="muted">{invite?'Your household invitation will be waiting after you sign in.':mode==='signup'?'Create your account, then bring everyone together.':'Sign in to your little corner of a tidier world.'}</p>{mode!=='reset'&&<><button type="button" className="google-button" disabled={busy} onClick={googleSignIn}><GoogleMark/><span>{busy?'One moment…':'Continue with Google'}</span></button><div className="auth-divider"><span>or continue with email</span></div></>}<form onSubmit={submit}>{mode==='signup'&&<label>Your name<input name="name" autoComplete="name" placeholder="What should we call you?" required maxLength={60}/></label>}<label>Email address<input name="email" type="email" autoComplete="email" placeholder="you@example.com" required/></label>{mode!=='reset'&&<label>Password<input name="password" type="password" autoComplete={mode==='signup'?'new-password':'current-password'} placeholder="Your password" required minLength={mode==='signup'?8:1}/></label>}{error&&<p className="form-error" role="alert">{error}</p>}{notice&&<p className="form-notice" role="status">{notice}</p>}<button className="button full" disabled={busy}>{busy?'One moment…':mode==='signup'?'Create account':mode==='reset'?'Send reset link':'Sign in'}<Icon name="arrow"/></button></form><div className="auth-links">{mode==='login'?<><button onClick={()=>{setMode('signup');setError('');setNotice('')}}>New here? Create an account</button><button onClick={()=>{setMode('reset');setError('');setNotice('')}}>Forgot password?</button></>:<button onClick={()=>{setMode('login');setError('');setNotice('')}}>Back to sign in</button>}</div><p className="privacy-note"><Icon name="home" size={15}/>Your household’s activity stays in your household.</p></div></main></div>
 }
+function GoogleMark() { return <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.7-.4-4H24v7.6h11a9.5 9.5 0 0 1-4.1 6.3v5.2h6.7c3.9-3.6 6-8.8 6-15.1Z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.7-5.2c-1.8 1.2-4.1 1.9-6.8 1.9-5.3 0-9.8-3.6-11.4-8.4H5.7v5.4A20.4 20.4 0 0 0 24 44Z"/><path fill="#FBBC05" d="M12.6 27.4a12 12 0 0 1 0-7.8v-5.4H5.7a20 20 0 0 0 0 18.6l6.9-5.4Z"/><path fill="#EA4335" d="M24 11.2c3 0 5.6 1 7.7 3l5.8-5.8A19.4 19.4 0 0 0 24 3a20.4 20.4 0 0 0-18.3 11.2l6.9 5.4A12 12 0 0 1 24 11.2Z"/></svg> }
 function Brand() { return <div className="brand"><span className="brand-symbol"><Icon name="check" size={22}/></span><span>I Did The Dishes<span className="brand-period">.</span></span></div> }
 
 function HouseholdForm({ invite, name, onSubmit, busy }) {
@@ -109,14 +116,15 @@ export default function App() {
   const closeModal=useCallback(()=>{setModal(null);scanner.current?.abort();scanner.current=null},[])
   useEffect(()=>{
     if(!supabase){setAuthReady(true);return}
-    supabase.auth.getSession().then(({data,error})=>{if(error)notify(error.message,true);setSession(data.session);setAuthReady(true)})
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,current)=>{setSession(current);setAuthReady(true);if(event==='PASSWORD_RECOVERY')setRecovery(true)})
+    supabase.auth.getSession().then(({data,error})=>{if(error)notify(error.message,true);if(data.session&&restoreGoogleDestination())setRoute(readRoute());setSession(data.session);setAuthReady(true)})
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,current)=>{if(current&&restoreGoogleDestination())setRoute(readRoute());setSession(current);setAuthReady(true);if(event==='PASSWORD_RECOVERY')setRecovery(true)})
     const routeChanged=()=>{setRoute(readRoute());scanned.current=''}
     window.addEventListener('popstate',routeChanged)
     if('serviceWorker' in navigator)navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`,{scope:import.meta.env.BASE_URL}).catch(()=>{})
     return()=>{subscription.unsubscribe();window.removeEventListener('popstate',routeChanged);scanner.current?.abort()}
   },[notify])
   useEffect(()=>{if(!toast||toast.error)return;const t=setTimeout(()=>setToast(null),6000);return()=>clearTimeout(t)},[toast])
+  useEffect(()=>{if(route.view==='notifications')setView('notifications')},[route.view])
 
   const loadHouses=useCallback(async preferred=>{
     const rows=await api.households();setHouses(rows);setHousesReady(true)
@@ -187,7 +195,7 @@ export default function App() {
   if(!session)return <><Auth onMessage={notify} invite={route.invite}/>{toast&&<Toast toast={toast} onClose={()=>setToast(null)}/>}</>
   const unread=notifications.filter(n=>!n.read_at).length
   const nav=[['dashboard','grid','Overview'],['chores','tag','Chores & stickers'],['household','users','Your household'],['notifications','bell','Notifications']]
-  const currentName=me?.display_name||session.user.user_metadata?.display_name||'there'
+  const currentName=me?.display_name||session.user.user_metadata?.display_name||session.user.user_metadata?.full_name||session.user.user_metadata?.name||'there'
   const greeting=new Date().getHours()<12?'Good morning':new Date().getHours()<18?'Good afternoon':'Good evening'
   const dailyCount=tag=>Number(dashboard?.tag_counts?.[tag.id]||0)
   const todaysTags=tags.filter(t=>t.active)

@@ -18,3 +18,4 @@ if (url && key && !url.includes('YOUR_PROJECT') && !key.includes('YOUR_PUBLISHAB
 
 export const supabase = client
 export { configurationError }
+export const supabasePublicConfig = { url, key }

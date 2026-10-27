@@ -36,6 +36,21 @@ NFC links use query parameters rather than path routing so they work on GitHub P
 
 The database enforces authorization, points, timestamps, and daily limits. It locks the sticker row while recording a completion, so concurrent scans cannot exceed the household limit. A request ID makes retries idempotent; a 30-second per-user/tag cooldown protects against repeated phone reads. Limits reset at midnight in the household’s configured time zone. Historical points and chore names remain snapshots even after settings change.
 
+## Google sign-in
+
+The sign-in and create-account screens include **Continue with Google**, using Supabase OAuth. NFC and invitation links are preserved across the redirect on the same device. Google profile names prefill household onboarding; authorization still comes from database membership, never profile metadata. Only the standard identity scopes are used.
+
+One-time provider setup:
+
+1. Choose/create a project in [Google Auth Platform](https://console.cloud.google.com/auth/overview). Configure branding and audience. While in Testing, add the Google accounts that will use the app as test users.
+2. Create a **Web application** OAuth client.
+3. Authorized JavaScript origins: `https://therealbiebs.github.io` and, for local development, `http://127.0.0.1:5173`.
+4. Authorized redirect URI: `https://oqciivgizvuzuxxzhglq.supabase.co/auth/v1/callback`.
+5. Enable Google in [Supabase Auth Providers](https://supabase.com/dashboard/project/oqciivgizvuzuxxzhglq/auth/providers?provider=Google), save the Client ID and Client Secret there, and keep nonce checking enabled. The secret must never be added to frontend code, Git, or `VITE_*` variables.
+6. Supabase Site URL and allowed redirect URLs must include the live site and local development URL as listed below.
+
+Until the provider is enabled, the button explains that setup is still needed. Google sign-in does not depend on custom SMTP. Email/password confirmations and password resets still do. Final verification requires a real Google-account sign-in after provider setup.
+
 ## Phone notifications
 
 Open **Your household → Enable phone notifications** on each device. A successful chore creates an inbox notification for every *other* member and queues a push for their opted-in devices.
