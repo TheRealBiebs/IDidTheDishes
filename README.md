@@ -6,11 +6,11 @@ The app is connected to the dedicated **IDidTheDishes** Supabase Free project (`
 
 ## Local development in Visual Studio Code
 
-Install Node.js 22.12 or newer and pnpm 11.25.0 if they are not already on your PATH.
+Install Node.js 22.12 or newer. npm comes with Node.js.
 
 ```sh
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 The checked-in public configuration works without an environment file. To use a different project, edit `src/supabase-config.json`, or copy `.env.example` to `.env.local` and fill in both values. Environment values override the public configuration. Restart the dev server after changing them.
@@ -44,10 +44,10 @@ Configuration is baked in at build time: after changing it, rerun the workflow. 
 ## Build
 
 ```sh
-pnpm build
-pnpm preview
+npm run build
+npm run preview
 ```
 
-The deployable static output is `dist/`. The lockfile pins the installed dependencies.
+The deployable static output is `dist/`. `package-lock.json` pins the installed dependencies; GitHub Actions uses `npm ci` to install those exact versions.
 
 References: [Supabase React guide](https://supabase.com/docs/guides/getting-started/quickstarts/reactjs), [Supabase row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [Vite GitHub Pages deployment](https://vite.dev/guide/static-deploy#github-pages).
