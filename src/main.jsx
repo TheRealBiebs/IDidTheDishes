@@ -53,7 +53,7 @@ function App() {
           <div className="hello-icon" aria-hidden="true">✳</div>
           <p className="eyebrow">YOUR NEXT IDEA STARTS HERE</p>
           <h1 id="greeting">{greeting}</h1>
-          <p className="intro">A little page. A world of possibilities.<br />Built with React, ready for whatever comes next.</p>
+          <p className="intro">BOOGERS</p>
           <div className="connection" role="status" aria-live="polite">
             <span className={`dot ${status}`} aria-hidden="true" />
             <span>{labels[status]}</span>
