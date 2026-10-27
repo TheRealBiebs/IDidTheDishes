@@ -42,7 +42,7 @@ The sign-in and create-account screens include **Continue with Google**, using S
 
 One-time provider setup:
 
-1. Choose/create a project in [Google Auth Platform](https://console.cloud.google.com/auth/overview). Configure branding and audience. While in Testing, add the Google accounts that will use the app as test users.
+1. Choose/create a project in [Google Auth Platform](https://console.cloud.google.com/auth/overview). Configure branding and audience. In Data Access, use only the standard `openid`, email, and profile scopes. While in Testing, add the Google accounts that will use the app as test users.
 2. Create a **Web application** OAuth client.
 3. Authorized JavaScript origins: `https://therealbiebs.github.io` and, for local development, `http://127.0.0.1:5173`.
 4. Authorized redirect URI: `https://oqciivgizvuzuxxzhglq.supabase.co/auth/v1/callback`.
