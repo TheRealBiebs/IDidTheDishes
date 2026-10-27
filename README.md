@@ -22,11 +22,25 @@ npm run preview
 
 The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every push to `main`.
 
-## The House Cup
+## Household themes and teams
+
+Open **Your household → Theme & teams** as the household owner. Choose **Harry Potter · Wizarding Houses**, **The Cat’s Meow**, **Squeaky Clean**, or **Busy Mom & Dad**. The theme applies to everyone viewing that household, with its own dashboard styling, decorative art, text, and point jars. New households can choose their theme during creation and automatically receive four matching starter teams.
+
+Every theme supports custom teams. Owners can add teams, rename them, set the exact gem-filling colour with a colour picker or hex code, choose an emblem, and assign members to teams. Members can choose their own team from the dashboard. Up to 20 teams are supported; the tube display scrolls horizontally when needed.
+
+Theme changes preserve team IDs, custom names, colours, memberships, and points. **Add starter teams** adds the current theme’s suggestions without replacing existing teams and can be repeated without duplicates. Teams can be archived only after their members have moved elsewhere. Archived teams can be reactivated through the editor.
+
+`household_teams` has household-scoped RLS and read-only browser grants. Theme/team mutations are owner-only RPCs; team selection checks membership and the team’s household. The owner can assign another member’s team, while ordinary members may only change their own. A composite foreign key prevents cross-household team assignments. Colours are restricted to six-digit hex values and team names are unique within a household, ignoring case. `supabase/household-themes.sql` documents the applied addition.
+
+Existing wizarding house selections were migrated to configurable teams, preserving their names, colours, and member assignments. The legacy house-choice API remains compatible, while the app uses the generic `choose_team` API. Current-week points follow the member’s current team in every theme; personal points and completion records are unchanged.
+
+The main components are `src/HouseholdThemes.jsx` and `src/themes.css`. `src/WizardTheme.jsx` supplies the shared glass/gem artwork and wizard decorations. The light themes use original cat, sponge, bubble, heart, and coffee artwork; no third-party brand assets are embedded. Motion respects reduced-motion settings.
+
+## The wizarding theme
 
 The app has a dark wizarding-school theme with CSS firelight, house banners, brass/glass counters, and faceted SVG gemstones. Motion respects the device’s **Reduce motion** preference. No audio or flashing effects are used.
 
-On the dashboard, choose **Choose your house** (or change it under **Your household**). Members can choose Gryffindor, Slytherin, Ravenclaw, or Hufflepuff independently in each household. House choice is persisted in `household_members.wizard_house`; the `choose_wizard_house` RPC only updates the signed-in member’s own membership. Existing members begin unsorted.
+On the dashboard, choose **Choose your team** (or change it under **Your household**). The wizarding starter teams are Gryffindor, Slytherin, Ravenclaw, and Hufflepuff. These are now ordinary configurable teams; owners can rename them or change their colours just like teams in every other theme.
 
 The four house tubes show the sum of current members’ server-issued points for the current week. The personal vault shows your own contribution in your house’s gemstone color. Changing houses moves your current-week points to the new house; personal points and completion history stay unchanged. Unsorted points remain personal until the member chooses a house. Tube capacity scales upward as points increase, and the displayed scale makes the fill level explicit. Scores still reset each Monday using the household time zone.
 
