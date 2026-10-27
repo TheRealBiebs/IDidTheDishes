@@ -22,6 +22,16 @@ npm run preview
 
 The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every push to `main`.
 
+## The House Cup
+
+The app has a dark wizarding-school theme with CSS firelight, house banners, brass/glass counters, and faceted SVG gemstones. Motion respects the device’s **Reduce motion** preference. No audio or flashing effects are used.
+
+On the dashboard, choose **Choose your house** (or change it under **Your household**). Members can choose Gryffindor, Slytherin, Ravenclaw, or Hufflepuff independently in each household. House choice is persisted in `household_members.wizard_house`; the `choose_wizard_house` RPC only updates the signed-in member’s own membership. Existing members begin unsorted.
+
+The four house tubes show the sum of current members’ server-issued points for the current week. The personal vault shows your own contribution in your house’s gemstone color. Changing houses moves your current-week points to the new house; personal points and completion history stay unchanged. Unsorted points remain personal until the member chooses a house. Tube capacity scales upward as points increase, and the displayed scale makes the fill level explicit. Scores still reset each Monday using the household time zone.
+
+`src/WizardTheme.jsx` contains the crests, banners, torches, tube/gem rendering, and house picker. `src/wizard.css` supplies the theme across sign-in, dashboard, chores, and dialogs. The applied database addition is documented in `supabase/wizard-houses.sql`.
+
 ## First household
 
 1. Create an account and confirm your email. Sign in once on each browser/device; sessions persist until sign-out or browser storage/session expiry.

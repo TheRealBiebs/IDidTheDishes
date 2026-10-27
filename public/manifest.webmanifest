@@ -2,12 +2,12 @@
   "id": "./",
   "name": "IDidTheDishes",
   "short_name": "Dishes",
-  "description": "Little chores. Shared wins.",
+  "description": "Everyday chores. Wizarding house points. A little magic at home.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7f8fa",
-  "theme_color": "#163e3b",
+  "background_color": "#0c0e12",
+  "theme_color": "#111419",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
