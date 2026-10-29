@@ -2,6 +2,8 @@
 
 A mobile-friendly household chore app using React, Supabase, and GitHub Pages.
 
+Android app: see [ANDROID.md](ANDROID.md) for installing the APK, native NFC, and Android Studio development.
+
 Live: https://therealbiebs.github.io/IDidTheDishes/
 
 ## Develop in VS Code

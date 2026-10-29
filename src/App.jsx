@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, configurationError } from './supabase'
 import { api, rpc } from './api'
+import { isNative, authRedirectUrl } from './native'
 import { restoreGoogleDestination, signInWithGoogle } from './google-auth'
 import { disablePush, enablePush, hasPush, inviteLink, scanSticker, siteRoot, tagLink, writeSticker } from './platform'
 import { GemTube, HallBanners, WIZARD_HOUSES } from './WizardTheme'
@@ -70,11 +71,11 @@ function Auth({ onMessage, invite, theme }) {
     const values = Object.fromEntries(new FormData(e.currentTarget))
     try {
       if (mode==='signup') {
-        const { data,error } = await supabase.auth.signUp({ email:values.email, password:values.password, options:{ data:{ display_name:values.name }, emailRedirectTo:siteRoot() } })
+        const { data,error } = await supabase.auth.signUp({ email:values.email, password:values.password, options:{ data:{ display_name:values.name }, emailRedirectTo:authRedirectUrl() } })
         if (error) throw error
         if (!data.session) setNotice('Check your email to confirm your account, then return here and sign in.')
       } else if (mode==='reset') {
-        const { error } = await supabase.auth.resetPasswordForEmail(values.email, { redirectTo:siteRoot() })
+        const { error } = await supabase.auth.resetPasswordForEmail(values.email, { redirectTo:authRedirectUrl() })
         if (error) throw error
         setNotice('If this email has an account, a password reset link is on its way.')
       } else {
@@ -125,8 +126,10 @@ export default function App() {
     const {data:{subscription}}=supabase.auth.onAuthStateChange((event,current)=>{if(current&&restoreGoogleDestination())setRoute(readRoute());setSession(current);setAuthReady(true);if(event==='PASSWORD_RECOVERY')setRecovery(true)})
     const routeChanged=()=>{setRoute(readRoute());scanned.current=''}
     window.addEventListener('popstate',routeChanged)
-    if('serviceWorker' in navigator)navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`,{scope:import.meta.env.BASE_URL}).catch(()=>{})
-    return()=>{subscription.unsubscribe();window.removeEventListener('popstate',routeChanged);scanner.current?.abort()}
+    const nativeError = event => notify(event.detail,true)
+    window.addEventListener('native-error',nativeError)
+    if(!isNative && 'serviceWorker' in navigator)navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`,{scope:import.meta.env.BASE_URL}).catch(()=>{})
+    return()=>{subscription.unsubscribe();window.removeEventListener('popstate',routeChanged);window.removeEventListener('native-error',nativeError);scanner.current?.abort()}
   },[notify])
   useEffect(()=>{if(!toast||toast.error)return;const t=setTimeout(()=>setToast(null),6000);return()=>clearTimeout(t)},[toast])
   useEffect(()=>{if(route.view==='notifications')setView('notifications')},[route.view])

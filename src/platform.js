@@ -1,18 +1,34 @@
 import { rpc } from './api'
 import config from './push-config.json'
+import { isNative, DishesNative, publicRoot } from './native'
+import { setNativeScanHandler } from './native-lifecycle'
 
-export const siteRoot = () => new URL(import.meta.env.BASE_URL, location.href).href
+export const siteRoot = () => isNative ? publicRoot : new URL(import.meta.env.BASE_URL, location.href).href
 export const tagLink = token => `${siteRoot()}?tag=${encodeURIComponent(token)}`
 export const inviteLink = code => `${siteRoot()}?invite=${encodeURIComponent(code)}`
 
 // Browser adapter. Future native NFC/push adapters can use the same API contracts.
 export async function writeSticker(token, signal) {
+  if (isNative) {
+    const cancel = () => DishesNative.cancelWrite().catch(() => {})
+    if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
+    signal?.addEventListener('abort', cancel, { once: true })
+    try { await DishesNative.writeTag({ url: tagLink(token) }); return }
+    finally { signal?.removeEventListener('abort', cancel) }
+  }
   if (!('NDEFReader' in window)) throw new Error('Use an NFC-writing app to write the sticker link shown below. Browser writing requires a supported Android browser.')
   const writer = new window.NDEFReader()
   await writer.write({ records: [{ recordType: 'url', data: tagLink(token) }] }, { signal })
 }
 
 export async function scanSticker(onToken, signal) {
+  if (isNative) {
+    if (signal?.aborted) return
+    setNativeScanHandler(onToken)
+    signal?.addEventListener('abort', () => setNativeScanHandler(null), { once: true })
+    try { await DishesNative.checkNfc() } catch (error) { setNativeScanHandler(null); throw error }
+    return
+  }
   if (!('NDEFReader' in window)) throw new Error('Tap a programmed sticker with your phone. To set up a blank sticker on iPhone, copy its link into an NFC-writing app.')
   const reader = new window.NDEFReader()
   reader.onreading = event => {
@@ -31,6 +47,7 @@ export async function scanSticker(onToken, signal) {
 }
 
 export async function enablePush() {
+  if (isNative) throw new Error('Android background notifications need Firebase setup. For now, enable phone notifications in the Chrome version of this app. Your in-app inbox still works.')
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('On iPhone, add this site to your Home Screen, open it there, then enable notifications. Otherwise use a browser with Web Push support.')
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new Error('Notifications were not enabled. You can allow them in your browser’s site settings.')
@@ -49,6 +66,7 @@ export async function enablePush() {
 }
 
 export async function disablePush() {
+  if (isNative) return
   const registration = await navigator.serviceWorker?.getRegistration(import.meta.env.BASE_URL)
   const subscription = await registration?.pushManager.getSubscription()
   if (subscription) {
@@ -58,6 +76,7 @@ export async function disablePush() {
 }
 
 export async function hasPush(userId, supabase) {
+  if (isNative) return false
   const registration = await navigator.serviceWorker?.getRegistration(import.meta.env.BASE_URL)
   const subscription = await registration?.pushManager.getSubscription()
   if (!subscription) return false

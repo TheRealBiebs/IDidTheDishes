@@ -1,5 +1,6 @@
 import { supabase, supabasePublicConfig } from './supabase'
-import { siteRoot } from './platform'
+import { authRedirectUrl, isNative } from './native'
+import { Browser } from '@capacitor/browser'
 
 const pendingKey = 'dishes-oauth-return'
 const allowed = ['tag', 'invite', 'household']
@@ -20,11 +21,12 @@ export async function signInWithGoogle() {
   for (const key of allowed) if (isUuid(current.searchParams.get(key))) query.set(key, current.searchParams.get(key))
   if (current.searchParams.get('view') === 'notifications') query.set('view', 'notifications')
   sessionStorage.setItem(pendingKey, JSON.stringify({ time: Date.now(), query: query.toString() }))
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: siteRoot(), queryParams: { prompt: 'select_account' } },
+    options: { redirectTo: authRedirectUrl(), skipBrowserRedirect: isNative, queryParams: { prompt: 'select_account' } },
   })
   if (error) { sessionStorage.removeItem(pendingKey); throw error }
+  if (isNative) await Browser.open({ url: data.url })
 }
 
 export function restoreGoogleDestination() {

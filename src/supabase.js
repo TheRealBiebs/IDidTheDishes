@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { isNative, nativeStorage } from './native'
 import publicConfig from './supabase-config.json'
 
 const url = import.meta.env.VITE_SUPABASE_URL?.trim() || publicConfig.url
@@ -9,7 +10,7 @@ let configurationError = ''
 if (url && key && !url.includes('YOUR_PROJECT') && !key.includes('YOUR_PUBLISHABLE_KEY')) {
   try {
     client = createClient(url, key, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !isNative, ...(isNative ? { flowType: 'pkce', storage: nativeStorage } : {}) },
     })
   } catch {
     configurationError = 'Check the Supabase project URL and publishable key, then restart the app.'

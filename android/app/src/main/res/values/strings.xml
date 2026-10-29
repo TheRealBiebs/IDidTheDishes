@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">I Did The Dishes</string>
+    <string name="title_activity_main">I Did The Dishes</string>
+    <string name="package_name">io.github.therealbiebs.ididthedishes</string>
+    <string name="custom_url_scheme">io.github.therealbiebs.ididthedishes</string>
+</resources>
