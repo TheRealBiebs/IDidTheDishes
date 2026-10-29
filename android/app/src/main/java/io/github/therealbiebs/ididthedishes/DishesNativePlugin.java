@@ -81,6 +81,7 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
     @PluginMethod public synchronized void writeTag(PluginCall call) {
         if (!ready(call)) return;
         if (!validSticker(Uri.parse(call.getString("url", "")))) { call.reject("Invalid chore sticker link."); return; }
+        if (call.getBoolean("lock", false) && !call.getBoolean("lockConfirmed", false)) { call.reject("Confirm permanent locking before continuing."); return; }
         if (pendingWrite != null) { call.reject("A sticker write is already waiting."); return; }
         pendingWrite = call;
     }
@@ -93,21 +94,42 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
         synchronized (this) { write = pendingWrite; pendingWrite = null; }
         if (write != null) {
             try {
-                NdefMessage message = new NdefMessage(new NdefRecord[]{NdefRecord.createUri(write.getString("url"))});
+                String expected = write.getString("url");
+                boolean verifyOnly = write.getBoolean("verifyOnly", false);
+                boolean lock = write.getBoolean("lock", false);
+                NdefMessage message = new NdefMessage(new NdefRecord[]{NdefRecord.createUri(expected)});
                 Ndef ndef = Ndef.get(tag);
                 if (ndef != null) {
                     try {
                         ndef.connect();
-                        if (!ndef.isWritable()) throw new Exception("This sticker is read-only.");
-                        if (ndef.getMaxSize() < message.toByteArray().length) throw new Exception("This sticker is too small for the link.");
-                        ndef.writeNdefMessage(message);
-                    } finally { ndef.close(); }
+                        NdefMessage existing = ndef.getNdefMessage();
+                        boolean sameUrl = matchesUrl(existing, expected);
+                        if (verifyOnly && !sameUrl) throw new Exception("The scanned sticker does not contain the expected URL. Nothing was locked.");
+                        if (!verifyOnly && !sameUrl) {
+                            if (write.getBoolean("blankOnly", false) && hasContent(existing)) throw new Exception("This sticker already contains data. Use a blank sticker; nothing was overwritten.");
+                            if (!ndef.isWritable()) throw new Exception("This sticker is read-only.");
+                            if (ndef.getMaxSize() < message.toByteArray().length) throw new Exception("This sticker is too small for the link.");
+                            ndef.writeNdefMessage(message);
+                        }
+                        // Verify the exact issued URL on this same Tag handle before locking.
+                        if (!matchesUrl(ndef.getNdefMessage(), expected)) throw new Exception("URL verification failed. Nothing was locked.");
+                        boolean locked = !ndef.isWritable();
+                        boolean unsupported = false;
+                        if (lock && !locked) {
+                            if (!ndef.canMakeReadOnly()) unsupported = true;
+                            else { locked = ndef.makeReadOnly(); unsupported = !locked; }
+                        }
+                        write.resolve(new JSObject().put("verified", true).put("locked", locked).put("lockUnsupported", unsupported));
+                    } finally { try { ndef.close(); } catch (Exception ignored) {} }
                 } else {
+                    if (verifyOnly) throw new Exception("This sticker is not NDEF-readable. Retap it after formatting.");
                     NdefFormatable blank = NdefFormatable.get(tag);
                     if (blank == null) throw new Exception("This sticker does not support NDEF links.");
                     try { blank.connect(); blank.format(message); } finally { blank.close(); }
+                    // Android's tech list may not include NDEF until the next discovery.
+                    // Never lock or claim success without a fresh read/verification.
+                    write.resolve(new JSObject().put("verified", false).put("locked", false).put("requiresRetap", true));
                 }
-                write.resolve();
             } catch (Exception e) { write.reject("Could not write sticker: " + e.getMessage()); }
             return;
         }
@@ -123,6 +145,17 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
         } catch (Exception e) {
             notifyListeners("scanError", new JSObject().put("message", "Could not read sticker. Hold your phone still and try again."));
         } finally { try { ndef.close(); } catch (Exception ignored) {} }
+    }
+
+    private boolean matchesUrl(NdefMessage message, String expected) {
+        if (message == null || message.getRecords().length != 1) return false;
+        Uri uri = message.getRecords()[0].toUri();
+        return uri != null && expected.equals(uri.toString());
+    }
+    private boolean hasContent(NdefMessage message) {
+        if (message == null) return false;
+        for (NdefRecord record : message.getRecords()) if (record.getTnf() != NdefRecord.TNF_EMPTY) return true;
+        return false;
     }
 
     private synchronized SecretKey secretKey() throws Exception {

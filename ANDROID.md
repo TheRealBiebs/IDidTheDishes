@@ -10,7 +10,7 @@ Sign in with Google. Supabase Auth's redirect allowlist must include `io.github.
 
 ## NFC
 
-With the app in the foreground, hold the phone's NFC antenna against a programmed sticker: the app records the chore without the browser's URL prompt. The Scan button can also scan a tag for configuration. Use a sticker's **Write NFC sticker** button to program a blank NDEF-compatible sticker; the app never permanently locks stickers.
+With the app in the foreground, hold the phone against a preloaded sticker. Assigned chores log for authorized members; unassigned stickers open claim/configuration for household admins. The Scan button can explicitly enter configuration mode. Platform admins use **Tag workshop** to create and write batches, verify URLs, and optionally permanently lock supported tags with explicit confirmation. Household admins assign stickers without writing them. See [PRELOADED-STICKERS.md](PRELOADED-STICKERS.md). These changes require a future rebuilt APK; the existing installed APK does not update automatically.
 
 Existing website URL stickers still work. Outside the app, Android decides whether to open the app, show a chooser or open a browser. If offered, choose I Did The Dishes and Always. On some versions use Android Settings → Apps → I Did The Dishes → Open by default → supported web addresses. GitHub project Pages cannot supply domain-root verified App Links for this project, so automatic background routing is device-dependent. Opening the app before scanning is the reliable path.
 

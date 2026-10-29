@@ -32,7 +32,7 @@ async function handleUrl(value) {
       const v = url.searchParams.get(key)
       if (/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v || '')) target.searchParams.set(key, v)
     }
-    if (url.searchParams.get('view') === 'notifications') target.searchParams.set('view', 'notifications')
+    if (['notifications','workshop'].includes(url.searchParams.get('view'))) target.searchParams.set('view', url.searchParams.get('view'))
     history.pushState(null, '', target); window.dispatchEvent(new PopStateEvent('popstate'))
   } catch (error) { report(error.message) }
 }

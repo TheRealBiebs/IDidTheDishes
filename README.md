@@ -8,6 +8,12 @@ Household reward systems: see [REWARD-SYSTEMS.md](REWARD-SYSTEMS.md) for gemston
 
 Household admins: see [HOUSEHOLD-ADMINS.md](HOUSEHOLD-ADMINS.md) for co-admins, transfers, and membership approval.
 
+Household creation includes a reward-system selector: gemstone points, a gold-star calendar, or the adventurer preview. The choice, theme, and selected starter chores are saved together. Admins can change the reward system later under **Your household**.
+
+Admins can also choose **Your household → Delete household** and type its exact name to confirm. This permanently removes the household's shared chores, teams, history, invitations, and notifications for all members. Accounts and other households remain. Its preloaded stickers become unassigned and reusable, including permanently locked stickers. The applied backend addition is documented in `supabase/household-lifecycle.sql`.
+
+Preloaded stickers: see [PRELOADED-STICKERS.md](PRELOADED-STICKERS.md) for the platform-admin workshop, optional permanent locking, household claims, release requests, and starter chores.
+
 Live: https://therealbiebs.github.io/IDidTheDishes/
 
 ## Develop in VS Code
@@ -56,13 +62,13 @@ The four house tubes show the sum of current members’ server-issued points for
 
 1. Create an account and confirm your email. Sign in once on each browser/device; sessions persist until sign-out or browser storage/session expiry.
 2. Create a household with its name, your display name, and the household time zone. A user can belong to multiple households.
-3. Start by setting up one or more chore stickers. Household admins manage sticker settings: chore name, location, points, a household-wide daily limit, eligible members, and active/paused state.
-4. Open a sticker’s settings and write its unique HTTPS URL as an NDEF **URL record** onto an NFC sticker. Supported Android browsers offer **Write NFC sticker**. On iPhone, copy the URL into an NFC-writing app. Choose rewritable NDEF stickers and test your phone/tag combination before deploying them around the house.
-5. Share the household invitation link. Invitations can be replaced by an admin; an old link then stops working. Anyone with a valid link can request membership; an admin must approve them before they gain access. Share links privately.
-6. Tap a programmed sticker, open the phone’s NFC link prompt, and the app logs the chore for the signed-in user. If signed out, the pending tag remains in the URL until sign-in. Browsers cannot prove a physical scan: opening a copied sticker URL also counts.
+3. Select any of 12 starter chores during creation, or add custom chores later. Household admins configure chore names, locations, points, shared daily limits, eligible members, and active state.
+4. Scan a preloaded, verified sticker as an admin to assign and claim it. Friends do not need to write stickers. Platform admins prepare batches separately in **Tag workshop**; see [PRELOADED-STICKERS.md](PRELOADED-STICKERS.md).
+5. Share the household invitation link. Anyone with a valid link can request membership; an admin must approve them. An admin can replace the invitation link. Share links privately.
+6. A scan in the installed app records the chore for an authorized member. Browser scans show a preview with an explicit logging action. Signed-out visitors see app information and sign-in options; foreign households can request release. Browsers cannot prove a physical scan: copied URLs also work subject to server checks.
 7. View household points and chore counts for the current Monday-based week, today’s totals, recent activity, and a private notification inbox.
 
-NFC links use query parameters rather than path routing so they work on GitHub Pages. Settings changes keep the sticker URL stable. A new sticker gets a separate token.
+NFC links use query parameters rather than path routing so they work on GitHub Pages. Settings changes keep the physical sticker URL stable. Only registered, verified inventory can be claimed. Release preserves the original chore history and makes the physical URL available for another household.
 
 The database enforces authorization, points, timestamps, and daily limits. It locks the sticker row while recording a completion, so concurrent scans cannot exceed the household limit. A request ID makes retries idempotent; a 30-second per-user/tag cooldown protects against repeated phone reads. Limits reset at midnight in the household’s configured time zone. Historical points and chore names remain snapshots even after settings change.
 
@@ -117,7 +123,7 @@ The Edge Function source is `supabase/functions/chore-push/index.ts`. Deploy thr
 
 ## Future Android and iPhone apps
 
-No native project or App Store packaging is included. React, Supabase’s HTTPS APIs, and the SQL RPCs can be reused in a future Capacitor app. Browser NFC and Web Push are isolated in `src/platform.js`; native NFC, deep links, secure session storage, and APNs/FCM adapters will require platform work later. Physical URL stickers can remain the entry point. Web Push subscriptions are browser-specific and are not a substitute for native push tokens.
+The Capacitor Android project is included; see [ANDROID.md](ANDROID.md). The React frontend and Supabase APIs can also be reused for a future iOS project. Building and signing iOS requires macOS/Xcode and Apple provisioning. No iOS packaging is included yet.
 
 ## Verification
 
