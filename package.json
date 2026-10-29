@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.js",
     "test:push": "node --test tests/fcm.test.js",
     "dev": "vite --host 127.0.0.1 --configLoader runner",
     "build": "vite build --configLoader runner",

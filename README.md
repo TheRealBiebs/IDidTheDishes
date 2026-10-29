@@ -4,6 +4,8 @@ A mobile-friendly household chore app using React, Supabase, and GitHub Pages.
 
 Android app: see [ANDROID.md](ANDROID.md) for installing the APK, native NFC, and Android Studio development.
 
+Household reward systems: see [REWARD-SYSTEMS.md](REWARD-SYSTEMS.md) for gemstone points, the gold-star calendar, and the adventurer preview scaffold.
+
 Live: https://therealbiebs.github.io/IDidTheDishes/
 
 ## Develop in VS Code
