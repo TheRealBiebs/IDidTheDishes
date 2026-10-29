@@ -2,6 +2,7 @@ import { rpc } from './api'
 import config from './push-config.json'
 import { isNative, DishesNative, publicRoot } from './native'
 import { setNativeScanHandler } from './native-lifecycle'
+import { enableNativePush, disableNativePush, hasNativePush } from './native-push'
 
 export const siteRoot = () => isNative ? publicRoot : new URL(import.meta.env.BASE_URL, location.href).href
 export const tagLink = token => `${siteRoot()}?tag=${encodeURIComponent(token)}`
@@ -47,7 +48,7 @@ export async function scanSticker(onToken, signal) {
 }
 
 export async function enablePush() {
-  if (isNative) throw new Error('Android background notifications need Firebase setup. For now, enable phone notifications in the Chrome version of this app. Your in-app inbox still works.')
+  if (isNative) return enableNativePush()
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('On iPhone, add this site to your Home Screen, open it there, then enable notifications. Otherwise use a browser with Web Push support.')
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new Error('Notifications were not enabled. You can allow them in your browser’s site settings.')
@@ -66,7 +67,7 @@ export async function enablePush() {
 }
 
 export async function disablePush() {
-  if (isNative) return
+  if (isNative) return disableNativePush()
   const registration = await navigator.serviceWorker?.getRegistration(import.meta.env.BASE_URL)
   const subscription = await registration?.pushManager.getSubscription()
   if (subscription) {
@@ -76,7 +77,7 @@ export async function disablePush() {
 }
 
 export async function hasPush(userId, supabase) {
-  if (isNative) return false
+  if (isNative) return hasNativePush(userId)
   const registration = await navigator.serviceWorker?.getRegistration(import.meta.env.BASE_URL)
   const subscription = await registration?.pushManager.getSubscription()
   if (!subscription) return false

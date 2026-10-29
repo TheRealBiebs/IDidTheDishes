@@ -9,3 +9,6 @@ dist/
 *.keystore
 *.jks
 android/.idea/
+*-firebase-adminsdk-*.json
+*service-account*.json
+i-did-the-dishes-f2550-firebase-adminsdk-fbsvc-0cf94be6a3.json

@@ -2,6 +2,7 @@ import { App } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
 import { DishesNative, isNative, publicRoot, stickerToken } from './native'
 import { supabase } from './supabase'
+import { initializeNativePush } from './native-push'
 
 let lastUrl = '', lastTime = 0
 let scanHandler = null
@@ -37,6 +38,7 @@ async function handleUrl(value) {
 }
 export async function initializeNative() {
   if (!isNative) return
+  const pushReady = initializeNativePush(handleUrl).catch(error => report(error.message))
   await App.addListener('appUrlOpen', ({ url }) => handleUrl(url))
   await DishesNative.addListener('tagScanned', ({ url }) => handleUrl(url))
   await DishesNative.addListener('scanError', ({ message }) => report(message))
@@ -45,4 +47,5 @@ export async function initializeNative() {
   })
   const launch = await App.getLaunchUrl()
   if (launch?.url) await handleUrl(launch.url)
+  await pushReady
 }

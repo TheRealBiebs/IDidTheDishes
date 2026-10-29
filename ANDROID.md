@@ -32,8 +32,12 @@ GitHub Actions also builds and runs Android lint on each relevant push. It cache
 
 - Native NFC read/write, existing household/team/theme screens and live notification inbox.
 - Google uses the system browser and PKCE; saved sessions and the PKCE verifier are encrypted with Android Keystore. Device backups are disabled.
-- Closed-app **native** push notifications need Firebase configuration and a native-token delivery backend. Until then enable existing Web Push in Chrome for phone alerts; the native app explains this when Enable notifications is tapped.
+- Closed-app Android notifications use Firebase Cloud Messaging. In Your household, choose Enable phone notifications and allow the Android permission prompt. Tokens are associated with the signed-in user, refreshed on launch, and removed on disabling notifications/sign-out. Tapping a notification opens that household’s inbox. Android force-stop, disabled notification channels, lack of Google Play services, network availability and battery settings can prevent delivery.
 - Email sign-up/reset still need the previously deferred SMTP setup. Google sign-in does not require SMTP.
 - NFC and Google return behavior need testing on your physical phone; a CI build cannot verify its hardware.
 
 The React UI and backend remain reusable for a future Capacitor iOS project. Building/signing iOS later requires macOS/Xcode and Apple's device provisioning.
+
+## Firebase configuration
+
+The non-secret Android Firebase configuration is `android/app/google-services.json`. The backend service-account credential is encrypted in Supabase Vault as `dishes_fcm_service_account`, readable only through the service-role push worker. Never commit an admin key or put it in frontend environment variables. The worker uses FCM HTTP v1, the existing durable retry queue, and removes UNREGISTERED device tokens. Browser Web Push continues using the existing VAPID configuration.

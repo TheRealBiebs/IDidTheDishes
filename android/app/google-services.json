@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "625934223102",
+    "project_id": "i-did-the-dishes-f2550",
+    "storage_bucket": "i-did-the-dishes-f2550.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:625934223102:android:a666a502a0975fdb9487af",
+        "android_client_info": {
+          "package_name": "io.github.therealbiebs.ididthedishes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4u09ob3UDxbDkBqRLuyJSnWayeoFrGnM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

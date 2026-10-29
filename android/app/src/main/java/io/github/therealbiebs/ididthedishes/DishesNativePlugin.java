@@ -17,6 +17,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.firebase.messaging.FirebaseMessaging;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import javax.crypto.Cipher;
@@ -70,6 +71,13 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
         enableReader(); return true;
     }
     @PluginMethod public void checkNfc(PluginCall call) { if (ready(call)) call.resolve(); }
+    @PluginMethod public void unregisterPush(PluginCall call) {
+        FirebaseMessaging.getInstance().setAutoInitEnabled(false);
+        FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) call.resolve();
+            else call.reject("Could not unregister phone notifications. Check your connection and try again.");
+        });
+    }
     @PluginMethod public synchronized void writeTag(PluginCall call) {
         if (!ready(call)) return;
         if (!validSticker(Uri.parse(call.getString("url", "")))) { call.reject("Invalid chore sticker link."); return; }

@@ -28,6 +28,7 @@ jobs:
           path: ~/.android/debug.keystore
           key: dishes-android-debug-signing-v1
       - run: npm ci
+      - run: npm run test:push
       - run: npm run android:sync
       - name: Build sideloadable debug APK
         working-directory: android
