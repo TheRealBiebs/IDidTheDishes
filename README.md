@@ -6,6 +6,8 @@ Android app: see [ANDROID.md](ANDROID.md) for installing the APK, native NFC, an
 
 Household reward systems: see [REWARD-SYSTEMS.md](REWARD-SYSTEMS.md) for gemstone points, the gold-star calendar, and the adventurer preview scaffold.
 
+Household admins: see [HOUSEHOLD-ADMINS.md](HOUSEHOLD-ADMINS.md) for co-admins, transfers, and membership approval.
+
 Live: https://therealbiebs.github.io/IDidTheDishes/
 
 ## Develop in VS Code
@@ -28,13 +30,13 @@ The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every
 
 ## Household themes and teams
 
-Open **Your household → Theme & teams** as the household owner. Choose **Harry Potter · Wizarding Houses**, **The Cat’s Meow**, **Squeaky Clean**, or **Busy Mom & Dad**. The theme applies to everyone viewing that household, with its own dashboard styling, decorative art, text, and point jars. New households can choose their theme during creation and automatically receive four matching starter teams.
+Open **Your household → Theme & teams** as the household admin. Choose **Harry Potter · Wizarding Houses**, **The Cat’s Meow**, **Squeaky Clean**, or **Busy Mom & Dad**. The theme applies to everyone viewing that household, with its own dashboard styling, decorative art, text, and point jars. New households can choose their theme during creation and automatically receive four matching starter teams.
 
-Every theme supports custom teams. Owners can add teams, rename them, set the exact gem-filling colour with a colour picker or hex code, choose an emblem, and assign members to teams. Members can choose their own team from the dashboard. Up to 20 teams are supported; the tube display scrolls horizontally when needed.
+Every theme supports custom teams. Admins can add teams, rename them, set the exact gem-filling colour with a colour picker or hex code, choose an emblem, and assign members to teams. Members can choose their own team from the dashboard. Up to 20 teams are supported; the tube display scrolls horizontally when needed.
 
 Theme changes preserve team IDs, custom names, colours, memberships, and points. **Add starter teams** adds the current theme’s suggestions without replacing existing teams and can be repeated without duplicates. Teams can be archived only after their members have moved elsewhere. Archived teams can be reactivated through the editor.
 
-`household_teams` has household-scoped RLS and read-only browser grants. Theme/team mutations are owner-only RPCs; team selection checks membership and the team’s household. The owner can assign another member’s team, while ordinary members may only change their own. A composite foreign key prevents cross-household team assignments. Colours are restricted to six-digit hex values and team names are unique within a household, ignoring case. `supabase/household-themes.sql` documents the applied addition.
+`household_teams` has household-scoped RLS and read-only browser grants. Theme/team mutations are admin-only RPCs; team selection checks membership and the team’s household. An admin can assign another member’s team, while ordinary members may only change their own. A composite foreign key prevents cross-household team assignments. Colours are restricted to six-digit hex values and team names are unique within a household, ignoring case. `supabase/household-themes.sql` documents the applied addition.
 
 Existing wizarding house selections were migrated to configurable teams, preserving their names, colours, and member assignments. The legacy house-choice API remains compatible, while the app uses the generic `choose_team` API. Current-week points follow the member’s current team in every theme; personal points and completion records are unchanged.
 
@@ -44,7 +46,7 @@ The main components are `src/HouseholdThemes.jsx` and `src/themes.css`. `src/Wiz
 
 The app has a dark wizarding-school theme with CSS firelight, house banners, brass/glass counters, and faceted SVG gemstones. Motion respects the device’s **Reduce motion** preference. No audio or flashing effects are used.
 
-On the dashboard, choose **Choose your team** (or change it under **Your household**). The wizarding starter teams are Gryffindor, Slytherin, Ravenclaw, and Hufflepuff. These are now ordinary configurable teams; owners can rename them or change their colours just like teams in every other theme.
+On the dashboard, choose **Choose your team** (or change it under **Your household**). The wizarding starter teams are Gryffindor, Slytherin, Ravenclaw, and Hufflepuff. These are now ordinary configurable teams; admins can rename them or change their colours just like teams in every other theme.
 
 The four house tubes show the sum of current members’ server-issued points for the current week. The personal vault shows your own contribution in your house’s gemstone color. Changing houses moves your current-week points to the new house; personal points and completion history stay unchanged. Unsorted points remain personal until the member chooses a house. Tube capacity scales upward as points increase, and the displayed scale makes the fill level explicit. Scores still reset each Monday using the household time zone.
 
@@ -54,9 +56,9 @@ The four house tubes show the sum of current members’ server-issued points for
 
 1. Create an account and confirm your email. Sign in once on each browser/device; sessions persist until sign-out or browser storage/session expiry.
 2. Create a household with its name, your display name, and the household time zone. A user can belong to multiple households.
-3. Start by setting up one or more chore stickers. Household owners manage sticker settings: chore name, location, points, a household-wide daily limit, eligible members, and active/paused state.
+3. Start by setting up one or more chore stickers. Household admins manage sticker settings: chore name, location, points, a household-wide daily limit, eligible members, and active/paused state.
 4. Open a sticker’s settings and write its unique HTTPS URL as an NDEF **URL record** onto an NFC sticker. Supported Android browsers offer **Write NFC sticker**. On iPhone, copy the URL into an NFC-writing app. Choose rewritable NDEF stickers and test your phone/tag combination before deploying them around the house.
-5. Share the household invitation link. Invitations can be replaced by the owner; an old link then stops working. Anyone with a valid link can join, so share privately.
+5. Share the household invitation link. Invitations can be replaced by an admin; an old link then stops working. Anyone with a valid link can request membership; an admin must approve them before they gain access. Share links privately.
 6. Tap a programmed sticker, open the phone’s NFC link prompt, and the app logs the chore for the signed-in user. If signed out, the pending tag remains in the URL until sign-in. Browsers cannot prove a physical scan: opening a copied sticker URL also counts.
 7. View household points and chore counts for the current Monday-based week, today’s totals, recent activity, and a private notification inbox.
 
@@ -109,7 +111,7 @@ Auth URL configuration:
 
 `src/supabase-config.json` contains the intentionally public project URL and publishable key. Optional `.env.local` values `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` override them. Vite embeds these into public JavaScript: never use secret/service-role keys in `VITE_*` variables.
 
-Every exposed household table has RLS. Browser roles receive SELECT access only and use validated RPCs for mutations. Privileged functions live in the non-exposed `app_private` schema behind security-invoker public wrappers. Invites, push jobs, and Vault secrets are not browser-readable. The household owner configures tags; membership and authorization never depend on editable user metadata.
+Every exposed household table has RLS. Browser roles receive SELECT access only and use validated RPCs for mutations. Privileged functions live in the non-exposed `app_private` schema behind security-invoker public wrappers. Invites, push jobs, and Vault secrets are not browser-readable. The household admin configures tags; membership and authorization never depend on editable user metadata.
 
 The Edge Function source is `supabase/functions/chore-push/index.ts`. Deploy through Supabase with gateway JWT verification disabled because the handler itself authenticates the database webhook secret; anonymous requests receive 401. The function uses the automatically supplied `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` server environment variables.
 
@@ -119,7 +121,7 @@ No native project or App Store packaging is included. React, Supabase’s HTTPS 
 
 ## Verification
 
-The first application release was exercised with disposable QA accounts and two isolated households. Tests covered real password login, household creation/joining, invitation rotation, owner-only settings, cross-household isolation, server-owned awards, eligible members, paused tags, simultaneous scans at the daily limit, idempotency, duplicate-read cooldown, unchanged historical points, dashboard aggregates, inbox recipients, and secret access restrictions.
+The first application release was exercised with disposable QA accounts and two isolated households. Tests covered real password login, household creation/joining, invitation rotation, admin-only settings, cross-household isolation, server-owned awards, eligible members, paused tags, simultaneous scans at the daily limit, idempotency, duplicate-read cooldown, unchanged historical points, dashboard aggregates, inbox recipients, and secret access restrictions.
 
 Browser checks covered desktop/mobile layouts, sticker create/edit, invitation dialogs, automatic URL-triggered logging, and persisted sessions. The database-to-worker webhook and encrypted push path were tested against a deliberately invalid test endpoint; expired subscriptions were removed. Actual NFC hardware and background delivery to a real phone still require an opted-in device test. Temporary QA data is removed before handoff.
 

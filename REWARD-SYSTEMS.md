@@ -1,6 +1,6 @@
 # Household reward systems
 
-In **Your household → Reward system**, the household owner can select a reward system independently of the visual theme. Members see the same system. All existing and newly created households default to gemstone points.
+In **Your household → Reward system**, the household admin can select a reward system independently of the visual theme. Members see the same system. All existing and newly created households default to gemstone points.
 
 | System | Available now | Chore reward |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ The demo loadout and training dummy use screen-local state. Reloading discards t
 
 ## Data and history
 
-`households.reward_scheme` stores the selection. `set_reward_scheme` is an owner-only RPC. Existing household RLS controls reads, and household Realtime updates refresh the selection on other open clients.
+`households.reward_scheme` stores the selection. `set_reward_scheme` is an admin-only RPC. Existing household RLS controls reads, and household Realtime updates refresh the selection on other open clients.
 
 `chore_completions` remains the canonical history for every system. NFC scans, eligible members, shared daily limits, idempotency and notification delivery use the same completion pipeline. Point values remain stored so switching back can restore the point view. Point controls are hidden while using a different system; existing point values are retained.
 
@@ -24,7 +24,7 @@ Weekly comparison uses points for the gemstone system and completion counts for 
 
 1. Add stable metadata in `src/rewards/registry.js`: ID, label, availability, rule description and comparison unit.
 2. Add a dashboard component and register it in `src/rewards/RewardDashboard.jsx`. All systems receive household, theme, teams, members, current user, weekly scores and a refresh revision. Theme and reward code are separate.
-3. Add the scheme ID to the database constraint and owner setter through a migration. Keep old IDs and default behavior compatible with older installed APKs.
+3. Add the scheme ID to the database constraint and admin setter through a migration. Keep old IDs and default behavior compatible with older installed APKs.
 4. Add any server-side award logic to the authenticated completion transaction. Never trust browser requests to choose rewards, item ownership or battle outcomes.
 5. Cover scoring, permissions, idempotency and UI behavior; run `npm test` and `npm run build`. Build a new APK for bundled mobile UI changes.
 

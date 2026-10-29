@@ -14,6 +14,7 @@ async function read(table, configure = q => q) {
 
 export const api = {
   households: () => read('households', q => q.order('created_at')),
+  joinRequests: id => read('household_join_requests', q => q.eq('household_id', id).eq('status', 'pending').order('created_at')),
   members: id => read('household_members', q => q.eq('household_id', id).order('joined_at')),
   teams: id => read('household_teams', q => q.eq('household_id', id).order('created_at')),
   tags: id => read('chore_tags', q => q.eq('household_id', id).order('created_at')),

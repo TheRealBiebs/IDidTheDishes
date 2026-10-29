@@ -1,0 +1,17 @@
+import { isHouseholdAdmin, canRemoveAdmin } from './household-access'
+
+export function AdminMemberActions({ member, members, currentUser, busy, onAction }) {
+  const admin = isHouseholdAdmin(member), self = member.user_id === currentUser
+  return <div className="admin-member-actions"><button className="text-button" disabled={busy || (admin && !canRemoveAdmin(member, members))} onClick={() => onAction({ type: 'adminRole', member, makeAdmin: !admin })}>{admin ? self ? 'Step down as admin' : 'Remove admin role' : 'Make admin'}<span className="sr-only">: {member.display_name}</span></button>{!self && <button className="text-button" disabled={busy} onClick={() => onAction({ type: 'transferAdmin', member })}>Transfer my admin role<span className="sr-only"> to {member.display_name}</span></button>}{admin && !canRemoveAdmin(member, members) && <small>At least one admin is required. You can transfer your role to another member.</small>}</div>
+}
+export function AdminConfirmation({ action, busy, onConfirm, onCancel }) {
+  const transfer = action.type === 'transferAdmin'
+  return <><p>{transfer ? <>Transfer your admin role to <strong>{action.member.display_name}</strong>? They will be an admin and you will become a member. Any other admins keep their access.</> : action.makeAdmin ? <>Make <strong>{action.member.display_name}</strong> an admin? They can configure chores, approve members, manage household settings, and add or remove other admins.</> : <>Remove <strong>{action.member.display_name}</strong>’s admin role? They will remain a household member and can still log chores.</>}</p><div className="form-actions"><button className="button secondary" onClick={onCancel}>Cancel</button><button className="button" disabled={busy} onClick={onConfirm}>{busy ? 'Saving…' : transfer ? 'Transfer admin role' : action.makeAdmin ? 'Confirm make admin' : 'Confirm remove admin'}</button></div></>
+}
+export function JoinRequestReview({ requests, busy, onDecide }) {
+  return <section className="panel join-request-panel"><div className="panel-heading"><div><h2>Requests to join</h2><p>An admin approves each new household member.</p></div><span className="pill">{requests.length} pending</span></div>{requests.length ? <div>{requests.map(request => <div className="join-request-row" key={request.id}><div><strong>{request.display_name}</strong><small>Requested {new Date(request.created_at).toLocaleDateString()}</small></div><div><button className="button secondary" disabled={busy} onClick={() => onDecide(request.id, false)}>Decline<span className="sr-only"> {request.display_name}</span></button><button className="button" disabled={busy} onClick={() => onDecide(request.id, true)}>Approve<span className="sr-only"> {request.display_name}</span></button></div></div>)}</div> : <p className="empty-inline">No pending requests. Share an invitation link when you want to add someone.</p>}</section>
+}
+export function MyJoinRequests({ requests, onRefresh, busy }) {
+  if (!requests.length) return null
+  return <section className="panel my-join-requests"><div className="panel-heading"><div><h2>Your household requests</h2><p>An admin needs to approve your membership before you can access a household.</p></div><button className="text-button" disabled={busy} onClick={onRefresh}>Check status</button></div>{requests.map(request => <div key={request.id} className="my-request-row"><strong>{request.household_name}</strong><span className="pill">{request.status === 'pending' ? 'Awaiting admin approval' : 'Not approved'}</span></div>)}</section>
+}
