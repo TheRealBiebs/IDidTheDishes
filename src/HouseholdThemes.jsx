@@ -8,6 +8,14 @@ export const THEMES = {
   parents:{id:'parents',name:'Busy Mom & Dad',short:'Busy Mom & Dad',emoji:'☕',description:'Warm colours, coffee breaks, and sharing the family load.',dashboard:'The Family Huddle',cup:'The Family Team Cup',teamWord:'team',eyebrow:'LESS JUGGLING. MORE TOGETHER.',title:'A thousand little things.',subtitle:'One lovely team.',intro:'From the breakfast dishes to the bedtime tidy-up, every little thing you do deserves to be seen.',login:'A moment for your team.',personal:'Your share of the good stuff.',colors:['#ca7c80','#668ea8','#89a17a','#c69b58']},
 }
 export const themeFor = id => THEMES[id] || THEMES.wizard
+// A fresh device has no household identity yet. Keep this outside the selectable
+// household themes so it is only an onboarding/login fallback.
+export const NEUTRAL_THEME = {
+  id:'neutral',name:'Welcome home',emoji:'✓',dashboard:'Your household',cup:'Household teamwork',
+  eyebrow:'A LITTLE TEAMWORK GOES A LONG WAY',title:'A shared home.',subtitle:'A little less to do.',
+  intro:'Keep track of household chores, celebrate each other’s contributions, and find a rhythm that works for everyone.',
+  login:'Welcome home.',personal:'Your contributions',colors:['#42685c','#88a99a','#c5b691'],
+}
 export const teamFor = (member,teams=[]) => teams.find(t=>t.id===member?.team_id)
 export const teamAppearance = team => {
   const color=/^#[0-9a-f]{6}$/i.test(team?.color||'')?team.color:'#b9975c'
@@ -33,6 +41,7 @@ export function TeamBadge({team,size=44}) {
 }
 
 export function ThemeAtmosphere({theme}) {
+  if(theme.id==='neutral')return null
   if(theme.id==='wizard')return <CastleAtmosphere/>
   return <div className={`theme-atmosphere atmosphere-${theme.id}`} aria-hidden="true">{theme.id==='cats'?<><span className="decor-cat"><TeamBadge team={{color:'#c99da9',symbol:'cat'}} size={150}/></span>{Array.from({length:8},(_,i)=><span className={`paw-print paw-${i}`} key={i}>✦</span>)}</>:theme.id==='clean'?<>{Array.from({length:12},(_,i)=><i key={i} className={`soap-bubble bubble-${i}`}/>)}<span className="decor-sponge"><TeamBadge team={{color:'#d6b33a',symbol:'sponge'}} size={120}/></span></>:<><span className="decor-coffee"><TeamBadge team={{color:'#bca58a',symbol:'coffee'}} size={130}/></span><span className="decor-heart"><TeamBadge team={{color:'#d0aaa6',symbol:'heart'}} size={85}/></span><span className="decor-note">one little thing<br/>at a time ♡</span></>}</div>
 }
