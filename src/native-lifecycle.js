@@ -39,6 +39,7 @@ export async function initializeNative() {
   if (!isNative) return
   await App.addListener('appUrlOpen', ({ url }) => handleUrl(url))
   await DishesNative.addListener('tagScanned', ({ url }) => handleUrl(url))
+  await DishesNative.addListener('scanError', ({ message }) => report(message))
   await App.addListener('appStateChange', ({ isActive }) => {
     if (isActive) supabase.auth.startAutoRefresh(); else supabase.auth.stopAutoRefresh()
   })

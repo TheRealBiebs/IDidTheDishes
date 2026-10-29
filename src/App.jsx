@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, configurationError } from './supabase'
 import { api, rpc } from './api'
-import { isNative, authRedirectUrl } from './native'
+import { isNative, authRedirectUrl, setNativeBarStyle } from './native'
 import { restoreGoogleDestination, signInWithGoogle } from './google-auth'
 import { disablePush, enablePush, hasPush, inviteLink, scanSticker, siteRoot, tagLink, writeSticker } from './platform'
 import { GemTube, HallBanners, WIZARD_HOUSES } from './WizardTheme'
@@ -134,7 +134,7 @@ export default function App() {
   useEffect(()=>{if(!toast||toast.error)return;const t=setTimeout(()=>setToast(null),6000);return()=>clearTimeout(t)},[toast])
   useEffect(()=>{if(route.view==='notifications')setView('notifications')},[route.view])
 
-  useEffect(()=>{if(activeHouse?.theme)localStorage.setItem('dishes-theme',activeHouse.theme);document.title=`${theme.dashboard} · I Did The Dishes`;document.querySelector('meta[name=theme-color]')?.setAttribute('content',theme.id==='wizard'?'#111419':theme.colors[0])},[theme.id,activeHouse?.theme])
+  useEffect(()=>{setNativeBarStyle(theme.id);if(activeHouse?.theme)localStorage.setItem('dishes-theme',activeHouse.theme);document.title=`${theme.dashboard} · I Did The Dishes`;document.querySelector('meta[name=theme-color]')?.setAttribute('content',theme.id==='wizard'?'#111419':theme.colors[0])},[theme.id,activeHouse?.theme])
 
   const loadHouses=useCallback(async preferred=>{
     const rows=await api.households();setHouses(rows);setHousesReady(true)

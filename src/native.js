@@ -2,6 +2,10 @@ import { Capacitor, registerPlugin } from '@capacitor/core'
 
 export const isNative = Capacitor.isNativePlatform()
 export const DishesNative = registerPlugin('DishesNative')
+const SystemBars = registerPlugin('SystemBars')
+export function setNativeBarStyle(theme) {
+  if (isNative) SystemBars.setStyle({ style: theme === 'wizard' ? 'DARK' : 'LIGHT' }).catch(() => {})
+}
 export const publicRoot = 'https://therealbiebs.github.io/IDidTheDishes/'
 export const authRedirectUrl = () => isNative ? 'io.github.therealbiebs.ididthedishes://auth/callback' : new URL(import.meta.env.BASE_URL, location.href).href
 export const nativeStorage = {

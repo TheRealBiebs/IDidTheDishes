@@ -1,5 +1,6 @@
 /* Capacitor supplies these inset values on Android edge-to-edge displays. */
 .native-app body { padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)); padding-left: var(--safe-area-inset-left, 0px); padding-right: var(--safe-area-inset-right, 0px); }
 .native-app .mobile-nav { padding-bottom: max(var(--safe-area-inset-bottom, 0px), 12px); }
+.native-app .topbar { top: var(--safe-area-inset-top, 0px); }
 .native-app .toast { bottom: calc(86px + var(--safe-area-inset-bottom, 0px)); }
 .native-app .modal-backdrop { padding-top: calc(14px + var(--safe-area-inset-top, 0px)); padding-bottom: calc(14px + var(--safe-area-inset-bottom, 0px)); }
