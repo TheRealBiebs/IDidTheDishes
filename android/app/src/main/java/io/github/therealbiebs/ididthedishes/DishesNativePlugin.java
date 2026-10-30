@@ -119,6 +119,7 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
                             if (!ndef.canMakeReadOnly()) unsupported = true;
                             else { locked = ndef.makeReadOnly(); unsupported = !locked; }
                         }
+                        ignoreAfterBatchWrite(tag, write);
                         write.resolve(new JSObject().put("verified", true).put("locked", locked).put("lockUnsupported", unsupported));
                     } finally { try { ndef.close(); } catch (Exception ignored) {} }
                 } else {
@@ -128,6 +129,7 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
                     try { blank.connect(); blank.format(message); } finally { blank.close(); }
                     // Android's tech list may not include NDEF until the next discovery.
                     // Never lock or claim success without a fresh read/verification.
+                    ignoreAfterBatchWrite(tag, write);
                     write.resolve(new JSObject().put("verified", false).put("locked", false).put("requiresRetap", true));
                 }
             } catch (Exception e) { write.reject("Could not write sticker: " + e.getMessage()); }
@@ -147,6 +149,13 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
         } finally { try { ndef.close(); } catch (Exception ignored) {} }
     }
 
+    private void ignoreAfterBatchWrite(Tag tag, PluginCall call) {
+        // Stop redispatching a completed sticker while it remains at the antenna.
+        // An OEM lacking ignore support must not invalidate a verified write.
+        if (call.getBoolean("batchMode", false)) {
+            try { adapter.ignore(tag, 400, null, null); } catch (Exception ignored) {}
+        }
+    }
     private boolean matchesUrl(NdefMessage message, String expected) {
         if (message == null || message.getRecords().length != 1) return false;
         Uri uri = message.getRecords()[0].toUri();
