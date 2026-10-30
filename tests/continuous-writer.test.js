@@ -17,6 +17,25 @@ test('formatting automatically waits for a verification retap using the same URL
   await runContinuousWriter(f.options)
   assert.deepEqual(f.writes,[['token-1',false],['token-1',true]]);assert.deepEqual(f.marked,[['token-1',true]])
 })
+test('inconclusive immediate readback retaps the same URL and cannot mark or lock it early',async()=>{
+  const f=fixture();f.options.write=async(token,params)=>{
+    f.writes.push([token,params.verifyOnly])
+    if(f.writes.length===1)return {verified:false,locked:false,requiresRetap:true,reason:'readback'}
+    assert.equal(f.marked.length,0);assert.equal(params.verifyOnly,true)
+    return {verified:true,locked:true}
+  }
+  await runContinuousWriter(f.options)
+  assert.deepEqual(f.writes,[['token-1',false],['token-1',true]]);assert.deepEqual(f.marked,[['token-1',true]])
+})
+test('a wrong sticker on verification retap pauses without awarding a new URL or registering it',async()=>{
+  const f=fixture();f.options.write=async(token,params)=>{
+    f.writes.push([token,params.verifyOnly])
+    if(!params.verifyOnly)return {verified:false,locked:false,requiresRetap:true,reason:'readback'}
+    throw Error('Verification retap found a different URL')
+  }
+  await assert.rejects(runContinuousWriter(f.options),/different URL/)
+  assert.equal(f.marked.length,0);assert.equal(f.pending.current.token,'token-1');assert.equal(f.pending.current.verifyOnly,true)
+})
 test('retry after a failed server acknowledgement keeps the verified receipt and never rewrites',async()=>{
   const f=fixture();f.options.mark=async()=>{throw Error('Offline')}
   await assert.rejects(runContinuousWriter(f.options),/Offline/);assert.equal(f.writes.length,1)

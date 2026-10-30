@@ -11,6 +11,12 @@ Platform-admin access is separate from household administration. The selected ac
 5. Press **Stop writing** when finished. Resume keeps the pending URL. Failed server acknowledgements retain the verified receipt for retry without rewriting the sticker. Pending reservations remain unclaimable until registered as verified. After reopening the app, use **Verify existing sticker** for a pending physical sticker, or start writing more blanks.
 6. Give verified stickers to friends. Scanning an unclaimed sticker as a household admin goes directly to claim/configuration: choose from the household's chore list or configure a new custom chore. Chores with an existing sticker are shown but unavailable until their sticker is released.
 
+### If writing succeeds but immediate verification cannot read the URL
+
+The writer keeps the pending URL and asks for a removal and retap of the same physical sticker. It does not register or lock it until that read matches exactly. Readback errors and mismatches after a completed write use this retap flow; an existing correct URL is verified using its initial live read instead of a redundant second read.
+
+For stickers left on “This sticker is being prepared” by an older app, choose their writing session and **Find a written sticker to verify**. Scan the sticker to find its pending URL, then remove and retap it for exact verification. No rewrite is needed. This requires the next APK containing the verification fix. If several failed attempts programmed different physical stickers with the same pending URL, those are copies of one sticker identity; verifying one does not give the copies distinct identities.
+
 The browser workshop can create sessions and export URLs. Physical writing/verification use Android. These continuous-writing changes need a future rebuilt APK; no APK was built for this change. Leaving the workshop or hiding the app stops the writer. While armed, normal scanned links do not navigate away or award chores.
 
 Permanent locking prevents rewriting the physical URL on supported tags. It cannot be undone. Household assignment and chore settings remain changeable in the database, so a locked sticker can still be released and reused. Losing the hosting domain would affect locked stickers; keep these URLs stable. Locking does not prevent somebody copying a URL onto another sticker.

@@ -104,15 +104,30 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
                         ndef.connect();
                         NdefMessage existing = ndef.getNdefMessage();
                         boolean sameUrl = matchesUrl(existing, expected);
-                        if (verifyOnly && !sameUrl) throw new Exception("The scanned sticker does not contain the expected URL. Nothing was locked.");
+                        if (verifyOnly && !sameUrl) throw new Exception("Verification retap found " + describeNdef(existing) + ". Use the SAME sticker that was just written. Nothing was locked.");
+                        boolean didWrite = false;
                         if (!verifyOnly && !sameUrl) {
                             if (write.getBoolean("blankOnly", false) && hasContent(existing)) throw new Exception("This sticker already contains data. Use a blank sticker; nothing was overwritten.");
                             if (!ndef.isWritable()) throw new Exception("This sticker is read-only.");
                             if (ndef.getMaxSize() < message.toByteArray().length) throw new Exception("This sticker is too small for the link.");
                             ndef.writeNdefMessage(message);
+                            didWrite = true;
                         }
-                        // Verify the exact issued URL on this same Tag handle before locking.
-                        if (!matchesUrl(ndef.getNdefMessage(), expected)) throw new Exception("URL verification failed. Nothing was locked.");
+                        // Existing matching content was already read from the tag above.
+                        // A new write may need a fresh discovery before this controller
+                        // returns usable NDEF content. Ask for a retap, never fake success
+                        // or lock an unverified tag. A failed read after a completed write
+                        // must also retain this exact URL for verification.
+                        if (didWrite) {
+                            boolean verified = false;
+                            try { verified = matchesUrl(ndef.getNdefMessage(), expected); }
+                            catch (android.nfc.FormatException | java.io.IOException ignored) {}
+                            if (!verified) {
+                                ignoreAfterBatchWrite(tag, write);
+                                write.resolve(new JSObject().put("verified", false).put("locked", false).put("requiresRetap", true).put("reason", "readback"));
+                                return;
+                            }
+                        }
                         boolean locked = !ndef.isWritable();
                         boolean unsupported = false;
                         if (lock && !locked) {
@@ -160,6 +175,12 @@ public class DishesNativePlugin extends Plugin implements NfcAdapter.ReaderCallb
         if (message == null || message.getRecords().length != 1) return false;
         Uri uri = message.getRecords()[0].toUri();
         return uri != null && expected.equals(uri.toString());
+    }
+    private String describeNdef(NdefMessage message) {
+        if (message == null) return "no NDEF message";
+        NdefRecord[] records = message.getRecords();
+        if (records.length != 1) return records.length + " NDEF records instead of one URL";
+        return records[0].toUri() == null ? "a record that is not a URL" : "a different URL";
     }
     private boolean hasContent(NdefMessage message) {
         if (message == null) return false;
