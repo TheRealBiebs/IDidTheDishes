@@ -36,7 +36,7 @@ The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every
 
 ## Household themes and teams
 
-Open **Your household → Theme & teams** as the household admin. Choose **Harry Potter · Wizarding Houses**, **The Cat’s Meow**, **Squeaky Clean**, or **Busy Mom & Dad**. The theme applies to everyone viewing that household, with its own dashboard styling, decorative art, text, and point jars. New households can choose their theme during creation and automatically receive four matching starter teams.
+Open **Your household → Theme & teams** as the household admin. Choose **Wizard Adventure**, **The Cat’s Meow**, **Squeaky Clean**, or **Busy Mom & Dad**. The theme applies to everyone viewing that household, with its own dashboard styling, decorative art, text, and point jars. New households can choose their theme during creation and automatically receive four matching starter teams.
 
 Every theme supports custom teams. Admins can add teams, rename them, set the exact gem-filling colour with a colour picker or hex code, choose an emblem, and assign members to teams. Members can choose their own team from the dashboard. Up to 20 teams are supported; the tube display scrolls horizontally when needed.
 
@@ -44,15 +44,27 @@ Theme changes preserve team IDs, custom names, colours, memberships, and points.
 
 `household_teams` has household-scoped RLS and read-only browser grants. Theme/team mutations are admin-only RPCs; team selection checks membership and the team’s household. An admin can assign another member’s team, while ordinary members may only change their own. A composite foreign key prevents cross-household team assignments. Colours are restricted to six-digit hex values and team names are unique within a household, ignoring case. `supabase/household-themes.sql` documents the applied addition.
 
-Existing wizarding house selections were migrated to configurable teams, preserving their names, colours, and member assignments. The legacy house-choice API remains compatible, while the app uses the generic `choose_team` API. Current-week points follow the member’s current team in every theme; personal points and completion records are unchanged.
+Existing wizard-team selections were migrated to configurable teams, preserving their names, colours, and member assignments. The legacy house-choice API remains compatible, while the app uses the generic `choose_team` API. Current-week points follow the member’s current team in every theme; personal points and completion records are unchanged.
 
 The main components are `src/HouseholdThemes.jsx` and `src/themes.css`. `src/WizardTheme.jsx` supplies the shared glass/gem artwork and wizard decorations. The light themes use original cat, sponge, bubble, heart, and coffee artwork; no third-party brand assets are embedded. Motion respects reduced-motion settings.
 
-## The wizarding theme
+## Weekly competition
 
-The app has a dark wizarding-school theme with CSS firelight, house banners, brass/glass counters, and faceted SVG gemstones. Motion respects the device’s **Reduce motion** preference. No audio or flashing effects are used.
+Weeks reset on Monday at midnight in the household's time zone. Gemstone teams compete on chore points; the star calendar and adventurer preview compete on chore counts. Each positively scoring winning team earns **one weekly win point**, tracked separately from chore points. Tied leaders each receive one; an empty or zero-scoring team competition has no winner.
 
-On the dashboard, choose **Choose your team** (or change it under **Your household**). The wizarding starter teams are Gryffindor, Slytherin, Ravenclaw, and Hufflepuff. These are now ordinary configurable teams; admins can rename them or change their colours just like teams in every other theme.
+On the first visit after a reset, the app settles completed weeks and shows the latest result with gems bursting from the winning jar, stars leaving the calendar, or a trophy for the adventurer preview. A short server-side claim prevents simultaneous devices from showing the same account's celebration. The app records it as seen after the animation or dismissal; a crashed app can retry after the claim expires. Reduced-motion settings are respected. NFC logging still happens immediately before its weekly overlay.
+
+**Your household → Hall of Fame** shows all-time weekly win points and paginated weekly results. Open a week to see its standings, filter chores by team, and inspect archived details and private photo proof. Scores, team appearance, and chore records are frozen for each result. Team changes and reward-system changes after the boundary cannot rewrite a closed week's result.
+
+Competition history starts with the week this feature is enabled (including chores already logged in that week). Earlier weeks are not reconstructed from today's memberships. Finalization happens on the next household visit, without an extra scheduled service; membership and configuration history preserve the state at the actual boundary even when nobody opens the app that day.
+
+Applied backend references: `supabase/weekly-competition.sql` and `supabase/weekly-celebration-delivery.sql`. `supabase/verify-weekly-competition.sql` contains rolled-back fixtures covering boundaries, membership/configuration changes, single awards, archive immutability, pagination, celebration claims, acknowledgement, and household isolation. Frontend tests cover reward animations, Hall of Fame navigation/filtering, reduced motion, and native scan integration.
+
+## Wizard Adventure visuals
+
+The app has a dark wizard-adventure theme with CSS firelight, house banners, brass/glass counters, and faceted SVG gemstones. Motion respects the device’s **Reduce motion** preference. No audio or flashing effects are used.
+
+On the dashboard, choose **Choose your team** (or change it under **Your household**). The wizard-adventure starter teams are Ember Guild, Moonstone Circle, Stormwatch Order, and Sunstone Fellowship. These are now ordinary configurable teams; admins can rename them or change their colours just like teams in every other theme.
 
 The four house tubes show the sum of current members’ server-issued points for the current week. The personal vault shows your own contribution in your house’s gemstone color. Changing houses moves your current-week points to the new house; personal points and completion history stay unchanged. Unsorted points remain personal until the member chooses a house. Tube capacity scales upward as points increase, and the displayed scale makes the fill level explicit. Scores still reset each Monday using the household time zone.
 

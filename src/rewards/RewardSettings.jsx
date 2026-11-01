@@ -3,7 +3,7 @@ import { REWARD_SCHEMES, rewardFor } from './registry'
 
 export function RewardSummary({ household, owner, onConfigure }) {
   const scheme = rewardFor(household?.reward_scheme)
-  return <section className="panel household-style-panel reward-summary"><div><span className="reward-symbol" aria-hidden="true">{scheme.icon}</span><div><span className="eyebrow">YOUR HOUSEHOLD’S REWARD SYSTEM</span><h2>{scheme.name}{scheme.id === 'adventure' && <small className="reward-preview-label">Preview</small>}</h2><p>{scheme.description}</p></div></div>{owner && <button className="button secondary" onClick={onConfigure}>Reward system</button>}</section>
+  return <section className="panel household-style-panel reward-summary"><div><span className="reward-symbol" aria-hidden="true">{scheme.icon}</span><div><h2>{scheme.name}{scheme.id === 'adventure' && <small className="reward-preview-label">Preview</small>}</h2></div></div>{owner && <button className="button secondary" onClick={onConfigure}>Reward system</button>}</section>
 }
 export function RewardSettings({ household, busy, onSave }) {
   const [selected, setSelected] = useState(household.reward_scheme || 'points')
