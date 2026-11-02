@@ -1,4 +1,4 @@
-# I Did The Dishes
+# Chip In
 
 A mobile-friendly household chore app using React, Supabase, and GitHub Pages.
 

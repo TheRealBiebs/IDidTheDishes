@@ -1,5 +1,5 @@
 self.addEventListener('push', event => {
-  let data = { title: 'IDidTheDishes', body: 'Your household has a new update.', url: './' }
+  let data = { title: 'Chip In', body: 'Your household has a new update.', url: './' }
   try { Object.assign(data, event.data?.json()) } catch { /* Show a safe fallback. */ }
   event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,

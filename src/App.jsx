@@ -1,3 +1,4 @@
+import Brand from './Brand'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, configurationError } from './supabase'
 import { api, rpc } from './api'
@@ -108,7 +109,6 @@ function Auth({ onMessage, invite, theme, initialMode='login' }) {
 }
 function NeutralWelcomeArt(){return <div className="neutral-welcome-art" aria-hidden="true">{['Dishes put away','Plants watered','A hand with the laundry'].map((chore,i)=><div className="neutral-welcome-row" key={chore}><i><Icon name="check" size={15}/></i><span>{chore}</span></div>)}</div>}
 function GoogleMark() { return <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.7-.4-4H24v7.6h11a9.5 9.5 0 0 1-4.1 6.3v5.2h6.7c3.9-3.6 6-8.8 6-15.1Z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.7-5.2c-1.8 1.2-4.1 1.9-6.8 1.9-5.3 0-9.8-3.6-11.4-8.4H5.7v5.4A20.4 20.4 0 0 0 24 44Z"/><path fill="#FBBC05" d="M12.6 27.4a12 12 0 0 1 0-7.8v-5.4H5.7a20 20 0 0 0 0 18.6l6.9-5.4Z"/><path fill="#EA4335" d="M24 11.2c3 0 5.6 1 7.7 3l5.8-5.8A19.4 19.4 0 0 0 24 3a20.4 20.4 0 0 0-18.3 11.2l6.9 5.4A12 12 0 0 1 24 11.2Z"/></svg> }
-function Brand() { return <div className="brand"><span className="brand-symbol"><Icon name="check" size={22}/></span><span>I Did The Dishes<span className="brand-period">.</span></span></div> }
 
 function HouseholdForm({ invite, name, onSubmit, busy }) {
   const [mode,setMode]=useState(invite?'join':'create')
@@ -158,7 +158,7 @@ export default function App() {
   useEffect(()=>setTagAuthMode(null),[route.tag])
   useEffect(()=>{const id=session?.user.id;setPlatformAdmin(null);if(!id)return;rpc('is_platform_admin').then(value=>{if(accessUser.current===id)setPlatformAdmin(Boolean(value))}).catch(()=>{if(accessUser.current===id)setPlatformAdmin(false)})},[session?.user.id])
 
-  useEffect(()=>{setNativeBarStyle(theme.id);if(activeHouse?.theme)localStorage.setItem('dishes-theme',activeHouse.theme);document.title='I Did The Dishes';document.querySelector('meta[name=theme-color]')?.setAttribute('content',theme.id==='wizard'?'#111419':theme.colors[0])},[theme.id,activeHouse?.theme])
+  useEffect(()=>{setNativeBarStyle(theme.id);if(activeHouse?.theme)localStorage.setItem('dishes-theme',activeHouse.theme);document.title='Chip In';document.querySelector('meta[name=theme-color]')?.setAttribute('content',theme.id==='wizard'?'#111419':theme.colors[0])},[theme.id,activeHouse?.theme])
 
   const loadHouses=useCallback(async preferred=>{
     const userId=accessUser.current;if(!userId)return []

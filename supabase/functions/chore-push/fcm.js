@@ -36,7 +36,7 @@ export function createFcmSender(credentials, fetcher = fetch) {
       method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
       headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: {
-        token, notification: { title: 'A little win at home', body: job.message.slice(0, 500) },
+        token, notification: { title: 'Chip In', body: job.message.slice(0, 500) },
         data: { url, notification_id: job.notification_id, household_id: job.household_id },
         android: { priority: 'HIGH', ttl: '3600s', notification: { channel_id: 'chores', icon: 'ic_stat_dishes', tag: job.notification_id } },
       } }),

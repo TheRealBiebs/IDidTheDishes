@@ -77,7 +77,7 @@ export async function enableNativePush() {
   if (!initialized) throw new Error('Phone notifications are still starting. Try again in a moment.')
   let permission = await PushNotifications.checkPermissions()
   if (permission.receive !== 'granted') permission = await PushNotifications.requestPermissions()
-  if (permission.receive !== 'granted') throw new Error('Allow notifications in Android Settings → Apps → I Did The Dishes → Notifications.')
+  if (permission.receive !== 'granted') throw new Error('Allow notifications in Android Settings → Apps → Chip In → Notifications.')
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Please sign in first.')
   const previous = await readState()

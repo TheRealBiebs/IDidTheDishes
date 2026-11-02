@@ -1,7 +1,14 @@
 {
   "appId": "io.github.therealbiebs.ididthedishes",
-  "appName": "I Did The Dishes",
+  "appName": "Chip In",
   "webDir": "dist",
-  "android": { "allowMixedContent": false },
-  "plugins": { "SystemBars": { "insetsHandling": "css", "style": "DARK" } }
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK"
+    }
+  }
 }

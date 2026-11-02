@@ -1,3 +1,4 @@
+import Brand from '../Brand'
 import { useEffect,useState } from 'react'
 import { api,rpc } from '../api'
 import { completionReward,rewardFor } from '../rewards/registry'
@@ -15,7 +16,7 @@ export default function TagScanPage({token,info,loading,error,session,houses,con
   const theme=assigned&&themeId?themeFor(themeId):NEUTRAL_THEME
   const reward=rewardFor(info?.appearance?.reward_scheme||household?.reward_scheme)
   async function requestRelease(){setRequestBusy(true);setRequestError('');try{await rpc('request_sticker_release',{p_token:token,p_household:targetHouse||houses[0]?.id});setNotice('Release requested. The current household’s admin can review it.')}catch(e){setRequestError(e.message)}finally{setRequestBusy(false)}}
-  return <main className={`tag-landing theme-${theme.id} ${theme.id==='wizard'?'':'theme-light'}`}><ThemeAtmosphere theme={theme}/><header><strong>I Did The Dishes.</strong><button className="text-button" disabled={detailsPending} onClick={onDone}>{session?'Back to app':'Continue without this sticker'}</button></header><section className="tag-landing-card">
+  return <main className={`tag-landing theme-${theme.id} ${theme.id==='wizard'?'':'theme-light'}`}><ThemeAtmosphere theme={theme}/><header><Brand/><button className="text-button" disabled={detailsPending} onClick={onDone}>{session?'Back to app':'Continue without this sticker'}</button></header><section className="tag-landing-card">
     {loading?<><h1>Checking your sticker…</h1><p>Finding the chore and your household access.</p></>:completion?<>
       <RewardCelebration key={completion.id} scheme={reward.id} color={info?.team?.color||theme.colors[0]} teamName={info?.team?.name}/><h1>{completion.chore}</h1><p className="tag-completion">{completionReward(reward,completion.points)}</p><p>Logged for you. Your household has been notified.</p>{error&&<p role="alert" className="form-error">{error}</p>}<button className="button secondary full" disabled={detailsPending} onClick={onDone}>Back to your household</button><CompletionDetails key={completion.id} completion={completion} onSaved={onSaved} onPendingChange={setDetailsPending}/>
     </>:<><span className="tag-hero-symbol" aria-hidden="true">{ready?'◇':assigned?theme.emoji:'?'}</span><h1>{assigned?info.chore:ready?'A new chore sticker.':info?.status==='preparing'?'This sticker is being prepared.':'This sticker is not available.'}</h1>{error&&<p role="alert" className="form-error">{error}</p>}
@@ -26,7 +27,7 @@ export default function TagScanPage({token,info,loading,error,session,houses,con
   </section>{weeklyCelebration}</main>
 }
 
-function AboutApp(){return <div className="tag-about"><h2>About the app</h2><p>I Did The Dishes lets your household tap preloaded NFC stickers to record chores, celebrate contributions, and keep everyone in the loop. Choose a theme and a reward system that work for your people.</p><p>Your household admin configures the chores and approves new members. The stickers are already written, so friends only need to scan them.</p></div>}
+function AboutApp(){return <div className="tag-about"><h2>About the app</h2><p>Chip In lets your household tap preloaded NFC stickers to record chores, celebrate contributions, and keep everyone in the loop. Choose a theme and a reward system that work for your people.</p><p>Your household admin configures the chores and approves new members. The stickers are already written, so friends only need to scan them.</p></div>}
 function ClaimSticker({token,onClaimed,renderTagForm,onHouseholds,initialTarget}){
   const [houses,setHouses]=useState(null),[house,setHouse]=useState(''),[chores,setChores]=useState([]),[members,setMembers]=useState([]),[selected,setSelected]=useState(''),[links,setLinks]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false)
   useEffect(()=>{let active=true;rpc('admin_households').then(rows=>{if(active){setHouses(rows);setHouse(rows.some(h=>h.id===initialTarget?.householdId)?initialTarget.householdId:rows[0]?.id||'')}}).catch(e=>{if(active){setError(e.message);setHouses([])}});return()=>{active=false}},[])

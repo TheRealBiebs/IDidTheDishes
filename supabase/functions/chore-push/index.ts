@@ -37,7 +37,7 @@ Deno.serve(async request => {
       } else {
       const endpoint = new URL(job.subscription.endpoint)
       if (endpoint.protocol !== 'https:' || !allowedHosts.test(endpoint.hostname) || endpoint.port || endpoint.username || endpoint.password) throw new Error('Unsupported push endpoint')
-      const payload = JSON.stringify({ title: 'A little win at home', body: job.message, id: job.notification_id, url: `https://therealbiebs.github.io/IDidTheDishes/?household=${job.household_id}&view=notifications` })
+      const payload = JSON.stringify({ title: 'Chip In', body: job.message, id: job.notification_id, url: `https://therealbiebs.github.io/IDidTheDishes/?household=${job.household_id}&view=notifications` })
       const details = webpush.generateRequestDetails(job.subscription, payload, { TTL: 3600, urgency: 'normal' })
       const response = await fetch(details.endpoint, { method: details.method, headers: details.headers, body: details.body, redirect: 'error', signal: AbortSignal.timeout(10000) })
       success = response.ok; expired = [404,410].includes(response.status)
