@@ -28,7 +28,7 @@ async function handleUrl(value) {
     const token = stickerToken(value)
     if (scanHandler && token) { scanHandler(token); return }
     const target = new URL(location.href); target.search = ''; target.hash = ''
-    for (const key of ['tag', 'invite', 'household']) {
+    for (const key of ['tag', 'invite', 'household', 'completion']) {
       const v = url.searchParams.get(key)
       if (/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v || '')) target.searchParams.set(key, v)
     }

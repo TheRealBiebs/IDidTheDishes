@@ -6,6 +6,10 @@ Android app: see [ANDROID.md](ANDROID.md) for installing the APK, native NFC, an
 
 Household reward systems: see [REWARD-SYSTEMS.md](REWARD-SYSTEMS.md) for gemstone points, the gold-star calendar, and the adventurer preview scaffold.
 
+Chore configuration includes signed **Point adjustments** for Shabbily, Good enough, To perfection, Quick maintenance, Standard, and Nightmare / disaster area. All default to zero. The selected quality and starting-condition adjustments combine with the base reward, with a minimum total of zero. For example, base 10 + perfection 5 + nightmare 8 awards 23 points. Leaving traits unselected adds nothing.
+
+Each completion snapshots its base reward and adjustment rules when logged. Changing or clearing optional ratings recalculates that same completion instead of adding another reward; later configuration changes affect new completions only. Rating edits also correct archived weekly point totals and winners. Gold-star calendars still award one star per completion, and unexpected-chore roulette rewards remain unchanged. Backend reference: `supabase/chore-trait-rewards.sql`; rollback verification: `supabase/verify-chore-trait-rewards.sql`.
+
 Household admins: see [HOUSEHOLD-ADMINS.md](HOUSEHOLD-ADMINS.md) for co-admins, transfers, and membership approval.
 
 Household creation includes a reward-system selector: gemstone points, a gold-star calendar, or the adventurer preview. The choice, theme, and selected starter chores are saved together. Admins can change the reward system later under **Your household**.
@@ -152,6 +156,32 @@ Web scan submission IDs persist with the page's history entry so reloading or re
 Production builds generate a versioned service worker with the public app assets precached. Offline navigation shows a reconnect screen; chore submissions are not queued and are never treated as completed offline. Auth responses, household API data, and photo proof are excluded from caching. An Update Chip In button activates a waiting worker when the user chooses. The two latest app caches are retained to support existing tabs.
 
 Use `npm run build` and `npm run preview` to check installation/service-worker behavior locally. Development mode does not register the production worker. Install guidance appears at login and in the household tab. Real iPhone sign-in, NFC URL handoff, and lock-screen push delivery still require a device check.
+
+## Community leaderboard
+
+The Leaderboard tab starts with a sharing disclosure. A household admin must explicitly join before the household is listed, and each member must accept the disclosure before viewing the community board. Households are private by default. Admins can leave to stop sharing immediately and revoke community access for all household members; rejoining requires fresh viewer consent.
+
+Only household names, active team names, and current-week aggregate chore points are shared, with derived totals/ranks. Weeks reset on Monday in each household's own time zone. The community uses raw chore point totals across reward systems and includes points already earned during the current week when joining. Team totals follow current team membership, matching the live household scoreboard. Individual identities, chore records, comments, and proof photos remain protected by existing RLS.
+
+Following is private to the signed-in account. The Following filter includes selected households and the viewer's own household; its selected view is remembered per account/household in the browser. Rankings retain their overall community position. Results are paginated in groups of 25 and refresh periodically while the tab is visible.
+
+Apply `supabase/community-leaderboard.sql` after the existing schema updates. Enrollment, consent, and follows are stored in private tables accessed only through validated RPCs. `supabase/verify-community-leaderboard.sql` checks consent gates, weekly totals, aggregate-only disclosure, raw-data isolation, personal follows, and withdrawal with rolled-back fixtures.
+
+## Household comments and likes
+
+Use Comments & likes on a completed chore in Recent activity, or expand a completion's details in chore history or the Hall of Fame. Likes can be removed; the first like from each household member notifies the original doer once. Each new comment notifies the doer with the comment text. Self-actions and removed likes do not send notifications. Author notes in the optional completion-details form remain separate from the conversation.
+
+Conversations are household-private and do not affect points or community leaderboard data. Comment threads and like counts update through Realtime, with a visible-page refresh fallback. Comments are limited to 1000 characters and paginated in groups of 50. Submission IDs make comment retries safe after a lost response. Notifications are sent only while the original doer is still a member of the household.
+
+Apply `supabase/chore-conversations.sql` after the previous schema updates. It adds read-protected social tables, mutation RPCs, and the completion ID to claimed push jobs. The `chore-push` Edge Function uses that ID in web and Android notification URLs. The inbox message opens the same completion; native and Google-auth return routing preserve its ID. `supabase/verify-chore-conversations.sql` verifies notification recipients, retry behavior, private access, and unchanged awards using rolled-back fixtures.
+
+## Refuting a completion
+
+Household members can refute another member's completion from its Comments & likes section, with an optional reason of up to 1000 characters. The original doer is notified, and one pending refutation is allowed per completion. Pending refutations leave the reward in place.
+
+Only the original doer can resolve a refutation. Mark redone keeps the existing completion, date, and points without awarding another completion. Remove completion deletes the completion and its reward, frees its schedule/cooldown slot, and corrects any archived weekly snapshots, team scores, and weekly winners. Removal requires a second confirmation in the UI. A resolved request can be retried safely; an old removed scan request cannot recreate the reward. New sticker visits use a fresh request as usual. Refutation request markers remain household-private for retry protection.
+
+Apply `supabase/chore-refutations.sql` after chore conversations. The hosted project applied the schema, resolution logic, and thread/scan integration as three smaller migrations. `supabase/verify-chore-refutations.sql` covers both resolution paths, authorization, duplicate requests, periodic quota release, removed-scan replay denial, archived score correction, and household deletion using rolled-back fixtures.
 
 ## Future Android and iPhone apps
 

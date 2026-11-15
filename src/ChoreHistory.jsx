@@ -8,6 +8,7 @@ const dayLabel = day => new Date(day+'T12:00:00Z').toLocaleDateString(undefined,
 
 export default function ChoreHistory({selection,members,reward}) {
   const [offset,setOffset]=useState(0),[data,setData]=useState(null),[busy,setBusy]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0)
+  useEffect(()=>{const refresh=()=>setRetry(n=>n+1);window.addEventListener('chore-completion-removed',refresh);return()=>window.removeEventListener('chore-completion-removed',refresh)},[])
   useEffect(()=>{
     let active=true;setBusy(true);setError('')
     api.choreHistory({...selection,offset}).then(rows=>{if(active)setData(rows)})

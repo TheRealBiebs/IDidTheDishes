@@ -3,7 +3,7 @@ import { authRedirectUrl, isNative } from './native'
 import { Browser } from '@capacitor/browser'
 
 const pendingKey = 'dishes-oauth-return'
-const allowed = ['tag', 'invite', 'household']
+const allowed = ['tag', 'invite', 'household', 'completion']
 const isUuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || '')
 
 export async function signInWithGoogle() {

@@ -1,0 +1,61 @@
+begin;
+create temp table trait_qa(h uuid,doer uuid,other_user uuid,tag uuid,token uuid,c uuid,rules jsonb default '{"perfection":5,"shabbily":-9,"maintenance":-4,"disaster":8,"good_enough":0,"standard":0}');
+grant all on trait_qa to authenticated,anon;
+insert into trait_qa(doer,other_user) select (select id from auth.users where email='andrewpbieber@gmail.com'),(select id from auth.users where email='andrew@cyclingcicerone.com');
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select doer from trait_qa),'role','authenticated')::text,true);
+update trait_qa set h=public.create_household_with_chores('Trait reward QA','Doer','UTC','cats','{}');
+insert into public.household_members(household_id,user_id,display_name,role) select h,other_user,'Other member','member' from trait_qa;
+set local role authenticated;
+update trait_qa set tag=public.save_chore_rewards(h,null,'Counters','Kitchen',10,3,'{}',true,0,'daily',null,rules);
+reset role;
+update trait_qa set token=(select t.token from public.chore_tags t where t.id=tag);
+insert into app_private.sticker_inventory(token,household_id,chore_tag_id,written_at) select token,h,tag,now() from trait_qa;
+set local role authenticated;
+update trait_qa set c=(public.complete_chore(token,gen_random_uuid())->>'id')::uuid;
+do $$declare d jsonb;begin
+ d:=public.save_chore_details((select c from trait_qa),null,null,null,null);
+ if (d->>'points')::integer<>10 or (d->>'base_points')::integer<>10 then raise exception 'Ignored traits changed base reward';end if;
+ d:=public.save_chore_details((select c from trait_qa),'perfection','disaster',null,null);
+ if (d->>'points')::integer<>23 then raise exception 'Bonuses did not combine';end if;
+ d:=public.save_chore_details((select c from trait_qa),'perfection','disaster','Retry',null);
+ if (d->>'points')::integer<>23 then raise exception 'Repeated save stacked bonuses';end if;
+ d:=public.save_chore_details((select c from trait_qa),'shabbily','maintenance',null,null);
+ if (d->>'points')::integer<>0 then raise exception 'Penalty was not floored at zero';end if;
+ d:=public.save_chore_details((select c from trait_qa),'good_enough','standard',null,null);
+ if (d->>'points')::integer<>10 then raise exception 'Neutral traits changed reward';end if;
+ d:=public.save_chore_details((select c from trait_qa),'perfection',null,null,null);
+ if (d->>'points')::integer<>15 then raise exception 'Changing/clearing a trait did not recalculate';end if;
+ perform public.save_chore_rewards(h,tag,'Counters','Kitchen',20,3,'{}',true,0,'daily',null,'{"perfection":100,"disaster":50}') from trait_qa;
+ d:=public.save_chore_details((select c from trait_qa),'perfection','disaster',null,null);
+ if (d->>'points')::integer<>23 or (d->>'base_points')::integer<>10 then raise exception 'Changed configuration rewrote prior snapshot';end if;
+ if (select count(*) from public.chore_completions where household_id=(select h from trait_qa))<>1 then raise exception 'Details created more completions';end if;
+ begin perform public.save_chore_rewards(h,tag,'Counters','',10,3,'{}',true,0,'daily',null,'{"perfection":2.5}') from trait_qa;raise exception 'Fractional adjustment accepted';exception when others then if sqlerrm<>'Use whole-number point adjustments from -1000 to 1000 for supported traits.' then raise;end if;end;
+ begin perform public.save_chore_rewards(h,tag,'Counters','',10,3,'{}',true,0,'daily',null,'{"invalid":3}') from trait_qa;raise exception 'Unknown trait accepted';exception when others then if sqlerrm<>'Use whole-number point adjustments from -1000 to 1000 for supported traits.' then raise;end if;end;
+end $$;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select other_user from trait_qa),'role','authenticated')::text,true);
+do $$begin
+ begin perform public.save_chore_details((select c from trait_qa),'perfection','disaster',null,null);raise exception 'Another member changed ratings';exception when others then if sqlerrm<>'Only the member who logged this chore can add its details.' then raise;end if;end;
+ begin perform public.save_chore_rewards(h,tag,'Counters','',10,3,'{}',true,0,'daily',null,'{}') from trait_qa;raise exception 'Member configured bonuses';exception when others then if sqlerrm<>'Only the household admin can configure stickers.' then raise;end if;end;
+end $$;
+-- A new completion uses the new rules, while the old one retains its snapshot.
+update trait_qa set c=(public.complete_chore(token,gen_random_uuid())->>'id')::uuid;
+do $$declare d jsonb;begin
+ d:=public.save_chore_details((select c from trait_qa),'perfection','disaster',null,null);
+ if (d->>'points')::integer<>170 or (d->>'base_points')::integer<>20 then raise exception 'New scan did not snapshot new rules';end if;
+end $$;
+reset role;
+alter table trait_qa add column archive_id uuid default gen_random_uuid();
+alter table trait_qa add column team_a uuid default gen_random_uuid();
+alter table trait_qa add column team_b uuid default gen_random_uuid();
+update public.chore_completions set chore_date=date_trunc('week',now())::date-7,completed_at=now()-interval '8 days' where household_id=(select h from trait_qa);
+insert into public.household_week_results(id,household_id,week_start,week_end,timezone,reward_scheme,theme,team_scores) select archive_id,h,date_trunc('week',now())::date-7,date_trunc('week',now())::date,'UTC','points','cats',app_private.rank_week_teams(jsonb_build_array(jsonb_build_object('team_id',team_a,'name','A','points',170,'chores',1),jsonb_build_object('team_id',team_b,'name','B','points',23,'chores',1)),'points') from trait_qa;
+insert into public.weekly_result_chores(result_id,completion_id,team_id,completed_at,details) select q.archive_id,c.id,case when c.id=q.c then q.team_a else q.team_b end,c.completed_at,to_jsonb(c.*) from trait_qa q join public.chore_completions c on c.household_id=q.h;
+set local role authenticated;
+select public.save_chore_details((select c from trait_qa),null,null,null,null);
+reset role;
+do $$begin
+ if not exists(select 1 from public.household_week_results w cross join lateral jsonb_array_elements(w.team_scores) t where w.id=(select archive_id from trait_qa) and t->>'team_id'=(select team_b::text from trait_qa) and (t->>'winner')::boolean) then raise exception 'Archived winner did not follow adjusted points';end if;
+ if (select (details->>'points')::integer from public.weekly_result_chores where completion_id=(select c from trait_qa))<>20 then raise exception 'Archived chore points were stale';end if;
+end $$;
+rollback;
+select 'PASS: combined trait bonuses, penalties/minimum zero, neutral/unselected traits, non-stacking edits, per-completion rule snapshots, author/admin permissions and validation; fixtures rolled back' as result;

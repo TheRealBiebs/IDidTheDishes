@@ -31,7 +31,7 @@ export function createFcmSender(credentials, fetcher = fetch) {
   return async function send(job) {
     const token = job.subscription.token
     if (job.subscription.platform !== 'android' || !/^[A-Za-z0-9:_-]{20,4096}$/.test(token || '')) throw new Error('Invalid Android notification subscription')
-    const url = `https://therealbiebs.github.io/IDidTheDishes/?household=${encodeURIComponent(job.household_id)}&view=notifications`
+    const url = `https://therealbiebs.github.io/IDidTheDishes/?household=${encodeURIComponent(job.household_id)}&view=notifications${job.completion_id?'&completion='+encodeURIComponent(job.completion_id):''}`
     const response = await fetcher(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(credentials.project_id)}/messages:send`, {
       method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
       headers: { Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },

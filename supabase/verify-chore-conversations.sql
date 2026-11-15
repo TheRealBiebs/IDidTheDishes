@@ -1,0 +1,51 @@
+begin;
+create temp table social_qa(h uuid,foreign_h uuid,author uuid,actor uuid,c uuid,foreign_c uuid,request uuid default gen_random_uuid());
+grant all on social_qa to authenticated,anon;
+insert into social_qa(author,actor) select (select id from auth.users where email='andrewpbieber@gmail.com'),(select id from auth.users where email='andrew@cyclingcicerone.com');
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select author from social_qa),'role','authenticated')::text,true);
+update social_qa set h=public.create_household_with_chores('Social QA household','Mia','UTC','cats','{}'),foreign_h=public.create_household_with_chores('Foreign Social QA','Private member','UTC','cats','{}');
+insert into public.household_members(household_id,user_id,display_name,role) select h,actor,'Andrew','member' from social_qa;
+insert into public.chore_completions(household_id,user_id,chore,points,chore_date,request_id,completion_kind) select h,author,'Do the dishes',3,current_date,gen_random_uuid(),'unexpected' from social_qa;
+insert into public.chore_completions(household_id,user_id,chore,points,chore_date,request_id,completion_kind) select foreign_h,author,'Foreign private chore',3,current_date,gen_random_uuid(),'unexpected' from social_qa;
+update social_qa set c=(select id from public.chore_completions where household_id=h),foreign_c=(select id from public.chore_completions where household_id=foreign_h);
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select actor from social_qa),'role','authenticated')::text,true);
+set local role authenticated;
+do $$declare first_id uuid;retry_id uuid;d jsonb;begin
+ perform public.set_chore_like((select c from social_qa),true);
+ perform public.set_chore_like((select c from social_qa),true);
+ perform public.set_chore_like((select c from social_qa),false);
+ perform public.set_chore_like((select c from social_qa),true);
+ first_id:=public.add_chore_comment((select c from social_qa),'  Aww, I wanted to do them!  ',(select request from social_qa));
+ retry_id:=public.add_chore_comment((select c from social_qa),'Aww, I wanted to do them!',(select request from social_qa));
+ if first_id<>retry_id then raise exception 'Comment retry duplicated';end if;
+ d:=public.chore_social((select c from social_qa));
+ if (d->>'likes_count')::integer<>1 or d->>'liked_by_me'<>'true' or (d->>'total_comments')::integer<>1 or d->'liked_by'->>0<>'Andrew' then raise exception 'Thread totals or liker names incorrect';end if;
+ begin perform public.add_chore_comment((select c from social_qa),'Changed body',(select request from social_qa));raise exception 'Replay ID changed comment';exception when others then if sqlerrm<>'This submission ID was already used for another comment.' then raise;end if;end;
+ begin perform public.add_chore_comment((select c from social_qa),'   ',gen_random_uuid());raise exception 'Blank comment accepted';exception when others then if sqlerrm<>'Write a comment of 1 to 1000 characters.' then raise;end if;end;
+ begin perform public.chore_social((select foreign_c from social_qa));raise exception 'Foreign thread leaked';exception when others then if sqlerrm<>'This chore is not available to your household.' then raise;end if;end;
+ begin perform public.set_chore_like((select foreign_c from social_qa),true);raise exception 'Foreign like allowed';exception when others then if sqlerrm<>'This chore is not available to your household.' then raise;end if;end;
+ begin perform public.add_chore_comment((select foreign_c from social_qa),'Intrusion',gen_random_uuid());raise exception 'Foreign comment allowed';exception when others then if sqlerrm<>'This chore is not available to your household.' then raise;end if;end;
+ if exists(select 1 from public.chore_comments where household_id=(select foreign_h from social_qa)) then raise exception 'Comment RLS leak';end if;
+ begin insert into public.chore_likes(completion_id,household_id,user_id,liked) select c,h,actor,true from social_qa;raise exception 'Direct write allowed';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+do $$begin
+ if (select count(*) from public.notifications where completion_id=(select c from social_qa))<>2 then raise exception 'Duplicate/missing notifications';end if;
+ if exists(select 1 from public.notifications where completion_id=(select c from social_qa) and user_id<>(select author from social_qa)) then raise exception 'Notified someone other than doer';end if;
+ if not exists(select 1 from public.notifications where completion_id=(select c from social_qa) and message='Andrew liked your chore: Do the dishes.') or not exists(select 1 from public.notifications where completion_id=(select c from social_qa) and message='Andrew commented on Do the dishes: Aww, I wanted to do them!') then raise exception 'Notification content incorrect';end if;
+ if (select points from public.chore_completions where id=(select c from social_qa))<>3 then raise exception 'Social action changed reward';end if;
+end $$;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select author from social_qa),'role','authenticated')::text,true);
+set local role authenticated;
+select public.set_chore_like((select c from social_qa),true);
+select public.add_chore_comment((select c from social_qa),'Thanks!',gen_random_uuid());
+reset role;
+do $$begin
+ if (select count(*) from public.notifications where completion_id=(select c from social_qa))<>2 then raise exception 'Self-action sent notification';end if;
+end $$;
+set local role anon;
+do $$begin
+ begin perform public.chore_social((select c from social_qa));raise exception 'Anonymous thread access allowed';exception when insufficient_privilege then null;end;
+end $$;
+reset role;rollback;
+select 'PASS: private household likes and comments, duplicate/retry safety, author-only notifications, self-notification suppression, points unchanged, input validation, direct-write and foreign/anonymous denial; fixtures rolled back' as result;

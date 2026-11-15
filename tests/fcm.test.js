@@ -8,6 +8,19 @@ const credentials = { project_id: 'dishes-test-project', client_email: 'fixture@
 const job = { subscription: { platform: 'android', token: 'fixture-token-12345678901234567890' }, message: 'Alex did the dishes · 10 points', household_id: '00000000-0000-4000-8000-000000000001', notification_id: '00000000-0000-4000-8000-000000000002' }
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
+test('chore reaction notifications link back to the original completion',async()=>{
+  const completion='00000000-0000-4000-8000-000000000003'
+  const send=createFcmSender(credentials,async(url,options)=>{
+    if(url==='https://oauth2.googleapis.com/token')return response({access_token:'fixture-token',expires_in:3600})
+    const {message}=JSON.parse(options.body),destination=new URL(message.data.url)
+    assert.equal(destination.searchParams.get('completion'),completion)
+    assert.equal(destination.searchParams.get('household'),job.household_id)
+    assert.equal(destination.searchParams.get('view'),'notifications')
+    return response({name:'projects/fixture/messages/comment'})
+  })
+  assert.equal((await send({...job,completion_id:completion})).success,true)
+})
+
 test('signs OAuth assertion, coalesces authorization and sends background notification with inbox destination', async () => {
   let oauthCalls = 0, deliveries = 0
   const send = createFcmSender(credentials, async (url, options) => {
