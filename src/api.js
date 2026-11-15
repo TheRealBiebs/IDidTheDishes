@@ -20,6 +20,16 @@ export const api = {
   teams: id => read('household_teams', q => q.eq('household_id', id).order('created_at')),
   tags: id => read('chore_tags', q => q.eq('household_id', id).order('created_at')),
   activity: (id, since) => read('chore_completions', q => q.eq('household_id', id).gte('chore_date', since).order('completed_at', { ascending: false }).limit(3000)),
+  choreHistory: async ({ householdId, from, through, userId, userIds, offset = 0 }) => {
+    if (userIds && !userIds.length) return { chores: [], total: 0 }
+    let query = supabase.from('chore_completions').select('*', { count: 'exact' })
+      .eq('household_id', householdId).gte('chore_date', from).lte('chore_date', through)
+    if (userId) query = query.eq('user_id', userId)
+    if (userIds) query = query.in('user_id', userIds)
+    const { data, count, error } = await query.order('completed_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + 49)
+    if (error) throw error
+    return { chores: data || [], total: count || 0 }
+  },
   notifications: () => read('notifications', q => q.order('created_at', { ascending: false }).limit(100)),
 }
 

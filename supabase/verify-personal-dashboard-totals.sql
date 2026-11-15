@@ -1,0 +1,11 @@
+begin;
+insert into auth.users(id,email,raw_user_meta_data) values
+ ('f6000000-0000-4000-8000-000000000001','cooldown-admin@example.invalid','{}'),
+ ('f6000000-0000-4000-8000-000000000002','cooldown-member@example.invalid','{}');
+create temp table cooldown_qa(h uuid,t uuid,token uuid,request uuid default gen_random_uuid());
+grant all on cooldown_qa to authenticated,anon;
+insert into cooldown_qa default values;
+select set_config('request.jwt.claims','{"sub":"f6000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+update cooldown_qa set h=public.create_household_with_chores('Rollback cooldown QA','Admin','UTC','cats','{}');
+insert into public.household_members(household_id,user_id,display_name,role) select h,'f6000000-0000-4000-8000-000000000002','Member','member' from cooldown_qa;
+insert into public.chore_completions(household_id,user_id,chore,points,chore_date,request_id,completion_kind) select h,'f6000000-0000-4000-8000-000000000001'::uuid,'One',2,(now() at time zone 'UTC')::date,gen_random_uuid(),'unexpected' from cooldown_qa union all select h,'f6000000-0000-4000-8000-000000000001'::uuid,'Two',3,(now() at time zone 'UTC')::date,gen_random_uuid(),'unexpected' from cooldown_qa union all select h,'f6000000-0000-4000-8000-000000000001'::uuid,'Yesterday',2,(now() at time zone 'UTC')::date-1,gen_random_uuid(),'unexpected' from cooldown_qa union all select h,'f6000000-0000-4000-8000-000000000002'::uuid,'Other member',1,(now() at time zone 'UTC')::date,gen_random_uuid(),'unexpected' from cooldown_qa; set local role authenticated; do $$declare d jsonb;begin d:=public.household_dashboard((select h from cooldown_qa)); if d->'personal_today'<>jsonb_build_object('chores',2,'points',5) or (d->>'today_count')::integer<>3 then raise exception 'Incorrect personal totals';end if;end $$; select set_config('request.jwt.claims','{"sub":"f6000000-0000-4000-8000-000000000002","role":"authenticated"}',true); do $$declare d jsonb;begin d:=public.household_dashboard((select h from cooldown_qa));if d->'personal_today'<>jsonb_build_object('chores',1,'points',1) then raise exception 'Personal totals leaked across users';end if;end $$;reset role;rollback;select 'PASS: exact personal daily chores and points, household totals preserved, other users and dates excluded; fixtures rolled back' as result;

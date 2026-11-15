@@ -1,0 +1,10 @@
+.assigned-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0}
+.assigned-tile{padding:22px;text-align:left;font:inherit;color:inherit;cursor:pointer;min-width:0;display:flex;flex-direction:column;gap:10px}
+.assigned-heading{font-size:14px;font-weight:600;line-height:1.6}
+.assigned-count{font-size:32px;font-weight:500}
+.assigned-tile>span:last-child{font-size:12px;line-height:1.8;overflow-wrap:anywhere}
+.assigned-tile:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.assigned-tile:hover .assigned-heading{text-decoration:underline;text-underline-offset:4px}
+.assigned-list ul{list-style:none;padding:0}.assigned-list li{padding:18px 0;border-bottom:1px solid var(--line,#a58c5544)}
+.assigned-list li>strong,.assigned-list li>span{display:block;overflow-wrap:anywhere}.assigned-list li>span{font-size:12px;margin-top:8px;line-height:1.7}
+@media(max-width:650px){.assigned-grid{gap:8px}.assigned-tile{padding:14px 10px}.assigned-heading{font-size:12px}.assigned-tile>span:last-child{font-size:10px}}

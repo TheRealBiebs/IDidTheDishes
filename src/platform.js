@@ -1,3 +1,4 @@
+import { isStandalone } from './pwa'
 import { rpc } from './api'
 import config from './push-config.json'
 import { isNative, DishesNative, publicRoot } from './native'
@@ -49,9 +50,11 @@ export async function scanSticker(onToken, signal) {
 
 export async function enablePush() {
   if (isNative) return enableNativePush()
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('On iPhone, add this site to your Home Screen, open it there, then enable notifications. Otherwise use a browser with Web Push support.')
+  const appleMobile=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)
+  if(appleMobile&&!isStandalone())throw new Error('Add Chip In to your Home Screen, open it from its icon, then enable notifications here.')
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('On iPhone, add this site to your Home Screen, open it there, then enable notifications. Otherwise use a browser with Web Push support.')
   const permission = await Notification.requestPermission()
-  if (permission !== 'granted') throw new Error('Notifications were not enabled. You can allow them in your browser’s site settings.')
+  if (permission !== 'granted') throw new Error('Notifications were not enabled. For installed Chip In on iPhone, open Settings → Notifications → Chip In. In a browser, check its site notification settings.')
   await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL })
   const registration = await navigator.serviceWorker.ready
   const bytes = Uint8Array.from(atob(config.publicKey.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4-config.publicKey.length%4)%4)), c => c.charCodeAt(0))

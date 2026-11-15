@@ -1,0 +1,15 @@
+button.stat-card{appearance:none;font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
+button.stat-card:hover .stat-top>span{text-decoration:underline;text-underline-offset:4px}
+button.stat-card:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.stat-secondary{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:11px;margin-top:8px}
+.stat-secondary>strong{font-size:20px;font-weight:500}
+.chore-history-list{list-style:none;padding:0;margin:20px 0}
+.chore-history-list>li{border-top:1px solid var(--line,#a58c5544);padding:18px 0;overflow-wrap:anywhere}
+.chore-history-entry{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:14px}
+.chore-history-entry>span{flex-shrink:0;font-size:12px}
+.chore-history-list small{display:block;font-size:11px;line-height:1.7;margin-top:7px}
+.chore-history-list details{margin-top:12px;font-size:12px}
+.chore-history-list summary{cursor:pointer;width:fit-content}
+.chore-history-pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.chore-history-pagination>span{font-size:12px}
+@media(max-width:400px){.chore-history-entry{flex-wrap:wrap;gap:7px}}

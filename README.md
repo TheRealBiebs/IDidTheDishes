@@ -133,6 +133,26 @@ Every exposed household table has RLS. Browser roles receive SELECT access only 
 
 The Edge Function source is `supabase/functions/chore-push/index.ts`. Deploy through Supabase with gateway JWT verification disabled because the handler itself authenticates the database webhook secret; anonymous requests receive 401. The function uses the automatically supplied `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` server environment variables.
 
+## Chore cooldowns
+
+Household admins can choose Automatic, Custom duration, or No cooldown when configuring a chore that can be done more than once daily. Automatic is 720 minutes divided by the daily limit, rounded to the nearest minute (three per day means four hours). Changing the daily limit updates the automatic wait. Custom waits range from 1 to 1440 minutes.
+
+The wait is shared across all household members and measured from the latest completion, including across midnight. The daily household cap still applies. Scan retries return the same completion without awarding points again, and optional details do not start another cooldown. Single-completion daily chores use the daily cap alone. Existing repeatable chores default to Automatic.
+
+Apply `supabase/chore-cooldowns.sql` after the existing schema updates. `cooldown_minutes` stores NULL for Automatic, zero for disabled, or a positive custom duration. Legacy save/claim RPCs remain available; the new `save_tag_with_cooldown` and `claim_sticker_with_cooldown` RPCs include the setting. `supabase/verify-chore-cooldowns.sql` exercises household enforcement, expiry, overrides, claims, legacy compatibility, permissions, and idempotency with rolled-back fixtures.
+
+## Install Chip In as a PWA
+
+On iPhone, open the deployed site in Safari, choose Share → Add to Home Screen, keep Open as Web App enabled if offered, and tap Add. Open Chip In from its new icon, sign in, and enable phone notifications in the Notifications tab. Web Push requires iOS 16.4 or later and permission from the user. Android users can use their browser's Install app/Add to Home screen action. No Apple developer account is needed for the PWA.
+
+Prewritten sticker URLs work with the same accounts and household data as the native app. A sticker opened inside the installed PWA automatically submits an eligible chore. A URL opened in Safari shows the chore with an explicit Log this chore button; users may need to sign in separately in Safari. iOS controls the NFC URL notification and does not expose NFC reading/writing to the web app. Bulk sticker writing remains available on supported Android devices.
+
+Web scan submission IDs persist with the page's history entry so reloading or resuming that entry cannot award the same chore again. A fresh sticker visit creates a new submission. The server still enforces assignments, eligibility, limits, and cooldowns.
+
+Production builds generate a versioned service worker with the public app assets precached. Offline navigation shows a reconnect screen; chore submissions are not queued and are never treated as completed offline. Auth responses, household API data, and photo proof are excluded from caching. An Update Chip In button activates a waiting worker when the user chooses. The two latest app caches are retained to support existing tabs.
+
+Use `npm run build` and `npm run preview` to check installation/service-worker behavior locally. Development mode does not register the production worker. Install guidance appears at login and in the household tab. Real iPhone sign-in, NFC URL handoff, and lock-screen push delivery still require a device check.
+
 ## Future Android and iPhone apps
 
 The Capacitor Android project is included; see [ANDROID.md](ANDROID.md). The React frontend and Supabase APIs can also be reused for a future iOS project. Building and signing iOS requires macOS/Xcode and Apple provisioning. No iOS packaging is included yet.
