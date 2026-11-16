@@ -18,7 +18,7 @@ export const api = {
   releaseRequests: id => read('sticker_release_requests', q => q.eq('owner_household_id', id).eq('status', 'pending').order('created_at')),
   members: id => read('household_members', q => q.eq('household_id', id).order('joined_at')),
   teams: id => read('household_teams', q => q.eq('household_id', id).order('created_at')),
-  tags: id => read('chore_tags', q => q.eq('household_id', id).order('created_at')),
+  tags: id => read('chore_tags', q => q.eq('household_id', id).is('deleted_at',null).order('created_at')),
   activity: (id, since) => read('chore_completions', q => q.eq('household_id', id).gte('chore_date', since).order('completed_at', { ascending: false }).limit(3000)),
   choreHistory: async ({ householdId, from, through, userId, userIds, offset = 0 }) => {
     if (userIds && !userIds.length) return { chores: [], total: 0 }

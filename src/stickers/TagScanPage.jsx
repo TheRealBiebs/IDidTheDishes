@@ -27,7 +27,7 @@ export default function TagScanPage({token,info,loading,error,session,houses,con
   </section>{weeklyCelebration}</main>
 }
 
-function AboutApp(){return <div className="tag-about"><h2>About the app</h2><p>Chip In lets your household tap preloaded NFC stickers to record chores, celebrate contributions, and keep everyone in the loop. Choose a theme and a reward system that work for your people.</p><p>Your household admin configures the chores and approves new members. The stickers are already written, so friends only need to scan them.</p></div>}
+function AboutApp(){return <div className="tag-about"><h2>About the app</h2><p>Chip In lets your household tap preloaded NFC stickers to record chores, celebrate contributions, and keep everyone in the loop. Choose a household theme with its own rewards.</p><p>Your household admin configures the chores and approves new members. The stickers are already written, so friends only need to scan them.</p></div>}
 function ClaimSticker({token,onClaimed,renderTagForm,onHouseholds,initialTarget}){
   const [houses,setHouses]=useState(null),[house,setHouse]=useState(''),[chores,setChores]=useState([]),[members,setMembers]=useState([]),[teams,setTeams]=useState([]),[selected,setSelected]=useState(''),[links,setLinks]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false)
   useEffect(()=>{let active=true;rpc('admin_households').then(rows=>{if(active){setHouses(rows);setHouse(rows.some(h=>h.id===initialTarget?.householdId)?initialTarget.householdId:rows[0]?.id||'')}}).catch(e=>{if(active){setError(e.message);setHouses([])}});return()=>{active=false}},[])

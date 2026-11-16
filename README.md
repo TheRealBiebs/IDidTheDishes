@@ -4,7 +4,7 @@ A mobile-friendly household chore app using React, Supabase, and GitHub Pages.
 
 Android app: see [ANDROID.md](ANDROID.md) for installing the APK, native NFC, and Android Studio development.
 
-Household reward systems: see [REWARD-SYSTEMS.md](REWARD-SYSTEMS.md) for gemstone points, the gold-star calendar, and the adventurer preview scaffold.
+Household themes and rewards: see [REWARD-SYSTEMS.md](REWARD-SYSTEMS.md) for paired experiences and optional team scoring.
 
 Chore configuration includes signed **Point adjustments** for Shabbily, Good enough, To perfection, Quick maintenance, Standard, and Nightmare / disaster area. All default to zero. The selected quality and starting-condition adjustments combine with the base reward, with a minimum total of zero. For example, base 10 + perfection 5 + nightmare 8 awards 23 points. Leaving traits unselected adds nothing.
 
@@ -12,7 +12,7 @@ Each completion snapshots its base reward and adjustment rules when logged. Chan
 
 Household admins: see [HOUSEHOLD-ADMINS.md](HOUSEHOLD-ADMINS.md) for co-admins, transfers, and membership approval.
 
-Household creation includes a reward-system selector: gemstone points, a gold-star calendar, or the adventurer preview. The choice, theme, and selected starter chores are saved together. Admins can change the reward system later under **Your household**.
+Household creation has one theme selector: Wizard Adventure with gemstones, Parents & Kids with the star calendar, Cat companions (growth/breeding coming later), or Poker Chips (play money/gambling coming later). Teams default off, so individuals gather points; admins can enable teams during creation or in Household settings. Starter chores remain selectable during creation.
 
 Admins can also choose **Your household → Delete household** and type its exact name to confirm. This permanently removes the household's shared chores, teams, history, invitations, and notifications for all members. Accounts and other households remain. Its preloaded stickers become unassigned and reusable, including permanently locked stickers. The applied backend addition is documented in `supabase/household-lifecycle.sql`.
 
@@ -40,9 +40,9 @@ The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every
 
 ## Household themes and teams
 
-Open **Your household → Theme & teams** as the household admin. Choose **Wizard Adventure**, **The Cat’s Meow**, **Squeaky Clean**, or **Busy Mom & Dad**. The theme applies to everyone viewing that household, with its own dashboard styling, decorative art, text, and point jars. New households can choose their theme during creation and automatically receive four matching starter teams.
+Open **Your household → Household settings** as an admin. A single theme sets both appearance and rewards. Wizard Adventure uses gemstones, Parents & Kids uses the calendar, and cats/poker use clearly marked previews with chore points for now. The old Squeaky Clean theme migrates to Poker Chips. New households start in individual mode with no teams; choosing teams during creation adds four starter teams. Existing households retain their teams mode until an admin changes it.
 
-Every theme supports custom teams. Admins can add teams, rename them, set the exact gem-filling colour with a colour picker or hex code, choose an emblem, and assign members to teams. Members can choose their own team from the dashboard. Up to 20 teams are supported; the tube display scrolls horizontally when needed.
+Teams are optional in every theme. When enabled, admins can add and rename teams, choose reward colours and emblems, and assign members. Members can choose their team. Turning teams off keeps memberships and saved team assignments, but team assignments do not restrict chore eligibility until teams are enabled again. Up to 20 teams are supported.
 
 Theme changes preserve team IDs, custom names, colours, memberships, and points. **Add starter teams** adds the current theme’s suggestions without replacing existing teams and can be repeated without duplicates. Teams can be archived only after their members have moved elsewhere. Archived teams can be reactivated through the editor.
 
@@ -50,11 +50,11 @@ Theme changes preserve team IDs, custom names, colours, memberships, and points.
 
 Existing wizard-team selections were migrated to configurable teams, preserving their names, colours, and member assignments. The legacy house-choice API remains compatible, while the app uses the generic `choose_team` API. Current-week points follow the member’s current team in every theme; personal points and completion records are unchanged.
 
-The main components are `src/HouseholdThemes.jsx` and `src/themes.css`. `src/WizardTheme.jsx` supplies the shared glass/gem artwork and wizard decorations. The light themes use original cat, sponge, bubble, heart, and coffee artwork; no third-party brand assets are embedded. Motion respects reduced-motion settings.
+The main components are `src/HouseholdThemes.jsx` and `src/themes.css`. `src/WizardTheme.jsx` supplies the shared glass/gem artwork and wizard decorations. The light themes use cat, poker-chip, heart, and coffee artwork. Motion respects reduced-motion settings.
 
 ## Weekly competition
 
-Weeks reset on Monday at midnight in the household's time zone. Gemstone teams compete on chore points; the star calendar and adventurer preview compete on chore counts. Each positively scoring winning team earns **one weekly win point**, tracked separately from chore points. Tied leaders each receive one; an empty or zero-scoring team competition has no winner.
+Weeks reset Monday at midnight in the household time zone. Individuals compete when teams are off; teams compete when enabled. Wizard/cat/poker experiences use chore points; the star calendar uses completion counts. Each positive winner earns **one weekly win point**, with one each for tied winners. The dashboard leaderboard shows accumulated weekly win points rather than chore-point totals. Closed weeks retain their scoring mode and participants; rating edits and refutation removals correct their awards.
 
 On the first visit after a reset, the app settles completed weeks and shows the latest result with gems bursting from the winning jar, stars leaving the calendar, or a trophy for the adventurer preview. A short server-side claim prevents simultaneous devices from showing the same account's celebration. The app records it as seen after the animation or dismissal; a crashed app can retry after the claim expires. Reduced-motion settings are respected. NFC logging still happens immediately before its weekly overlay.
 
@@ -161,11 +161,11 @@ Use `npm run build` and `npm run preview` to check installation/service-worker b
 
 The Leaderboard tab starts with a sharing disclosure. A household admin must explicitly join before the household is listed, and each member must accept the disclosure before viewing the community board. Households are private by default. Admins can leave to stop sharing immediately and revoke community access for all household members; rejoining requires fresh viewer consent.
 
-Only household names, active team names, and current-week aggregate chore points are shared, with derived totals/ranks. Weeks reset on Monday in each household's own time zone. The community uses raw chore point totals across reward systems and includes points already earned during the current week when joining. Team totals follow current team membership, matching the live household scoreboard. Individual identities, chore records, comments, and proof photos remain protected by existing RLS.
+The community shares household names, team names when teams are enabled, and accumulated weekly win points from completed weeks. Chore-point totals are not shared. In individual mode, only combined household weekly wins appear; no individual identities or scores are exposed. Chore records, comments and photos remain household-private. Following and consent work as before.
 
 Following is private to the signed-in account. The Following filter includes selected households and the viewer's own household; its selected view is remembered per account/household in the browser. Rankings retain their overall community position. Results are paginated in groups of 25 and refresh periodically while the tab is visible.
 
-Apply `supabase/community-leaderboard.sql` after the existing schema updates. Enrollment, consent, and follows are stored in private tables accessed only through validated RPCs. `supabase/verify-community-leaderboard.sql` checks consent gates, weekly totals, aggregate-only disclosure, raw-data isolation, personal follows, and withdrawal with rolled-back fixtures.
+Apply `supabase/community-leaderboard.sql` after the existing schema updates. Enrollment, consent, and follows are stored in private tables accessed only through validated RPCs. `supabase/verify-community-leaderboard.sql` covers the original consent/follow model. `supabase/household-experiences.sql` supersedes its scoring with weekly wins; `supabase/verify-household-experiences.sql` checks current scoring and identity privacy using rollback fixtures.
 
 ## Household comments and likes
 
@@ -194,3 +194,13 @@ The first application release was exercised with disposable QA accounts and two 
 Browser checks covered desktop/mobile layouts, sticker create/edit, invitation dialogs, automatic URL-triggered logging, and persisted sessions. The database-to-worker webhook and encrypted push path were tested against a deliberately invalid test endpoint; expired subscriptions were removed. Actual NFC hardware and background delivery to a real phone still require an opted-in device test. Temporary QA data is removed before handoff.
 
 References: [Supabase Auth](https://supabase.com/docs/guides/auth), [Row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [Apple NFC URL reading](https://developer.apple.com/documentation/corenfc/adding-support-for-background-tag-reading), [WebKit Web Push](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/), [Capacitor](https://capacitorjs.com/docs).
+
+## Chore deletion
+
+Admins can choose **Chores → Delete chore** and confirm. The chore disappears from the household list, schedule, and sticker-assignment picker. Existing completions, points, conversations, photo proof, and weekly archives are preserved. Its physical sticker is released and can be claimed for another chore without rewriting it. The old chore cannot be reactivated. The Starter chores button and overview scan/setup sections are removed; starter selection remains in household creation.
+
+Backend additions: `supabase/household-experiences.sql`, `supabase/sticker-experience-appearance.sql`, and `supabase/deleted-chore-sticker-reuse.sql`.
+
+## Team deletion
+
+Household admins can choose **Household settings → Teams → Delete**, then review and confirm the warning. Members become unassigned and can select another team; assigned chores become available to eligible members. Personal points and completion history remain, as do archived weekly winners, team names/colours, and weekly win points. Current-week contributions follow members when they choose their next team. Deleting a team is permanent, and a starter team can be created again through Add starter teams. Backend: `supabase/team-deletion.sql`; rollback checks: `supabase/verify-team-deletion.sql`.

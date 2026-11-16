@@ -1,12 +1,14 @@
-// Stable scheme IDs are stored on households. Themes never choose the reward rule.
+// Themes choose one paired reward experience. Legacy adventure IDs remain readable in history.
 export const REWARD_SCHEMES = {
   points: { id: 'points', name: 'Gemstone points', icon: '◆', status: 'Ready', description: 'Earn chore points and fill your team’s colourful gemstone tubes.', rule: 'Each chore has its own point value. Team tubes show the current week.', unit: 'pts' },
   stars: { id: 'stars', name: 'Gold-star calendar', icon: '★', status: 'Ready', description: 'A gold star for every completed chore, collected on a monthly calendar.', rule: 'One completion = one star, regardless of the chore’s point value. All logged chores appear on their original dates.', unit: 'stars' },
+  cats: {id:'cats',name:'Cat companions',icon:'🐾',status:'Preview',description:'Cat growth and breeding are coming later. Chores earn points for now.',rule:'Earn chore points. Cat raising is not active yet.',unit:'pts'},
+  poker: {id:'poker',name:'Poker chips',icon:'♠',status:'Preview',description:'Play-money rewards and weekly poker are coming later.',rule:'Earn chore points. No money or gambling is active yet.',unit:'pts'},
   adventure: { id: 'adventure', name: 'Household adventurers', icon: '⚔', status: 'Preview', description: 'A place for chore loot, character equipment, and friendly household battles.', rule: 'Preview only: chores are logged, but loot drops, equipment ownership, and real battles are not active yet.', unit: 'chores' },
 }
 export const rewardFor = id => REWARD_SCHEMES[id] || REWARD_SCHEMES.points
-export const rewardValue = (scheme, score) => Number((scheme.id === 'points' ? score?.points : score?.chores) || 0)
-export const completionReward = (scheme, points) => scheme.id === 'points' ? `+${points} points` : scheme.id === 'stars' ? '+1 gold star' : 'Chore recorded'
+export const rewardValue = (scheme, score) => Number((['stars','adventure'].includes(scheme.id) ? score?.chores : score?.points) || 0)
+export const completionReward = (scheme, points) => !['stars','adventure'].includes(scheme.id) ? `+${points} points` : scheme.id === 'stars' ? '+1 gold star' : 'Chore recorded'
 export function rankedScores(scheme, scores = []) {
   return [...scores].sort((a, b) => rewardValue(scheme, b) - rewardValue(scheme, a))
 }
