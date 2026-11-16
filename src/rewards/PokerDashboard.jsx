@@ -1,0 +1,12 @@
+import {competitionEntries,teamsEnabled} from '../household-experience'
+import {PokerChipStacks,PokerChipLegend} from './PokerChips'
+
+export default function PokerDashboard({household,theme,teams,members,scores,currentUser,loading,onChoose,householdPoints}){
+  const enabled=teamsEnabled(household),entries=competitionEntries({household,teams,members,scores,colors:theme.colors}).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name))
+  const me=members.find(member=>member.user_id===currentUser),personal=Number(scores.find(score=>score.user_id===currentUser)?.points||0)
+  const total=Number(householdPoints??scores.reduce((sum,score)=>sum+Number(score.points||0),0))
+  return <section className="panel poker-dashboard" aria-labelledby="poker-table-title"><div className="poker-heading"><h2 id="poker-table-title">Poker table</h2><span className="pill">This week</span></div><div className="poker-table" aria-busy={loading}><div className="poker-table-bank"><span aria-hidden="true">♠</span><strong>{loading?'—':total.toLocaleString()}</strong><span>household points</span></div><div className="poker-seats">{entries.map(entry=><PokerSeat key={entry.id} name={entry.name} points={entry.points} yours={!enabled&&entry.id===currentUser} loading={loading} color={entry.color}/>)}{enabled&&<PokerSeat name="My chips" points={personal} yours loading={loading} color={theme.colors[0]}/>}</div>{!entries.length&&<p className="poker-empty">{loading?'Gathering chip stacks…':enabled?'Add teams in Household settings, or turn teams off for individual scoring.':'Your household members’ chip stacks will appear here.'}</p>}{enabled&&!me?.team_id&&<button className="button secondary" disabled={!teams.some(team=>team.active)||loading} onClick={onChoose}>Choose your team</button>}</div><PokerChipLegend/><p className="poker-table-rule">1 point = 1 chip value · totals reset each Monday. Poker games and betting are coming later.</p></section>
+}
+function PokerSeat({name,points,yours,loading,color}){
+  return <article className={`poker-seat ${yours?'poker-seat-yours':''}`} style={{'--seat-color':color}}><div className="poker-seat-heading"><h3>{name}</h3>{yours&&name!=='My chips'&&<span>You</span>}</div>{loading?<p className="poker-seat-loading">Counting chips…</p>:<PokerChipStacks points={points}/>}<div className="poker-balance"><strong>{loading?'—':points.toLocaleString()}</strong><span>points</span></div></article>
+}

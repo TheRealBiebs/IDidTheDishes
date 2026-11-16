@@ -7,15 +7,15 @@ A household has one theme selection under **Your household → Household setting
 | Wizard Adventure | Gemstone tubes for individuals or teams | Ready |
 | Parents & Kids | One star per completed chore on a calendar | Ready |
 | The Cat’s Meow | Cat companions; chore points for now | Growth and breeding coming later |
-| Poker Chips | Chip artwork; chore points for now | Play money and weekly gambling coming later |
+| Poker Chips | Exact-value chip stacks on a poker table, with earned-chip drop animation | Chip rewards ready; games and betting coming later |
 
-Poker is a future play-money experience. No real money, bets or gambling operations are implemented. The old Squeaky Clean selection migrates to Poker Chips. Legacy adventurer reward IDs remain readable in archived results.
+Poker uses white/red/blue/green/black chips worth 1/5/10/25/100 points respectively, using exact change. Games and betting are not implemented. The old Squeaky Clean selection migrates to Poker Chips. Legacy adventurer reward IDs remain readable in archived results.
 
 ## Individuals and teams
 
 New households default to individual scoring and do not create teams. Teams can be enabled at creation (with four starter teams) or later in Household settings. Existing households retain team mode. In team mode admins manage team names, colours, emblems and membership. Turning teams off keeps memberships and assignments for later, while ignoring team assignment restrictions for chore scans; member eligibility still applies.
 
-Gemstone tubes show individual members when teams are off and team totals when on. The calendar remains filterable by household member. Cat and poker previews show individual/team point totals without simulating future growth, breeding or betting.
+Gemstone tubes show individual members when teams are off and team totals when on. The calendar remains filterable by household member. Poker tables show exact chip stacks for individuals or teams, with a personal balance alongside team stacks. Cat companions remain a preview without simulating growth or breeding.
 
 ## Points and weekly wins
 

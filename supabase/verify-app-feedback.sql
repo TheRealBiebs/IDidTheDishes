@@ -1,0 +1,60 @@
+begin;
+create temp table feedback_qa(admin_id uuid,member_id uuid,h uuid,other_h uuid,request uuid default gen_random_uuid(),report uuid,bug uuid,general uuid);
+grant all on feedback_qa to authenticated,anon;
+insert into feedback_qa(admin_id,member_id) select (select id from auth.users where email='andrewpbieber@gmail.com'),(select id from auth.users where email='andrew@cyclingcicerone.com');
+-- Isolate rate-limit fixtures; all changes roll back, including any real rows.
+delete from app_private.app_feedback where user_id in(select admin_id from feedback_qa union all select member_id from feedback_qa);
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select admin_id from feedback_qa),'role','authenticated')::text,true);
+set local role authenticated;
+update feedback_qa set h=public.create_household_experience('Feedback QA admin household','Admin','UTC','wizard','{}');
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select member_id from feedback_qa),'role','authenticated','user_metadata',jsonb_build_object('platform_admin',true))::text,true);
+update feedback_qa set other_h=public.create_household_experience('Feedback QA member household','Member','UTC','cats','{}');
+update feedback_qa set report=public.submit_app_feedback(request,'idea','A helpful idea',other_h,'pwa','dashboard');
+update feedback_qa set bug=public.submit_app_feedback(gen_random_uuid(),'bug','The sticker did not open',null,'android','chores');
+update feedback_qa set general=public.submit_app_feedback(gen_random_uuid(),'general','Nice app',null,'web','household');
+do $$declare id uuid;begin
+ id:=public.submit_app_feedback((select request from feedback_qa),'idea','A helpful idea',(select other_h from feedback_qa),'pwa','dashboard');
+ if id<>(select report from feedback_qa) then raise exception 'Retry created another report';end if;
+ begin perform public.submit_app_feedback((select request from feedback_qa),'idea','Changed contents',(select other_h from feedback_qa),'pwa','dashboard');raise exception 'Retry changed submitted content';exception when others then if sqlerrm not like 'This feedback request was already%' then raise;end if;end;
+ begin perform public.submit_app_feedback(gen_random_uuid(),'idea',E' \n\t ',null,'web','dashboard');raise exception 'Whitespace feedback accepted';exception when others then if sqlerrm not like 'Write a message%' then raise;end if;end;
+ begin perform public.submit_app_feedback(gen_random_uuid(),'idea',repeat('x',4001),null,'web','dashboard');raise exception 'Oversized feedback accepted';exception when others then if sqlerrm not like 'Write a message%' then raise;end if;end;
+ begin perform public.submit_app_feedback(gen_random_uuid(),'unknown','Text',null,'web','dashboard');raise exception 'Unknown category accepted';exception when others then if sqlerrm not like 'Choose feedback%' then raise;end if;end;
+ begin perform public.submit_app_feedback(gen_random_uuid(),'idea','A helpful idea',(select h from feedback_qa),'web','dashboard');raise exception 'Foreign household context accepted';exception when others then if sqlerrm not like 'Only include a household%' then raise;end if;end;
+ begin perform public.platform_feedback();raise exception 'Household admin could read platform inbox';exception when others then if sqlerrm<>'Platform admin access required.' then raise;end if;end;
+ begin perform public.review_app_feedback((select report from feedback_qa),true);raise exception 'Reporter could review feedback';exception when others then if sqlerrm<>'Platform admin access required.' then raise;end if;end;
+ begin perform count(*) from app_private.app_feedback;raise exception 'Client could directly read private feedback';exception when insufficient_privilege then null;end;
+ begin update app_private.app_feedback f set status='reviewed' where f.id=(select report from feedback_qa);raise exception 'Client could directly update feedback';exception when insufficient_privilege then null;end;
+ for i in 1..7 loop perform public.submit_app_feedback(gen_random_uuid(),'idea','Rate fixture '||i,null,'ios','dashboard');end loop;
+ begin perform public.submit_app_feedback(gen_random_uuid(),'idea','Over the limit',null,'web','dashboard');raise exception 'Feedback rate limit missing';exception when others then if sqlerrm not like 'You have sent several reports%' then raise;end if;end;
+ id:=public.submit_app_feedback((select request from feedback_qa),'idea','A helpful idea',(select other_h from feedback_qa),'pwa','dashboard');
+ if id<>(select report from feedback_qa) then raise exception 'Rate limit blocked a safe retry';end if;
+end $$;
+reset role;
+insert into app_private.app_feedback(user_id,request_id,author_name,author_email,category,message,platform,screen,created_at)
+ select member_id,gen_random_uuid(),'Page fixture','fixture@example.invalid','general','Older feedback '||i,'web','dashboard',now()-interval '2 hours'-make_interval(mins=>i) from feedback_qa cross join generate_series(1,20) i;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select admin_id from feedback_qa),'role','authenticated')::text,true);
+set local role authenticated;
+do $$declare data jsonb;entry jsonb;begin
+ data:=public.platform_feedback();
+ if (data->>'total')::integer<>30 or jsonb_array_length(data->'feedback')<>25 or (data->>'new_count')::integer<>30 then raise exception 'Inbox count or first page incorrect';end if;
+ data:=public.platform_feedback(null,25);
+ if jsonb_array_length(data->'feedback')<>5 then raise exception 'Inbox omitted older feedback';end if;
+ data:=public.platform_feedback();
+ select value into entry from jsonb_array_elements(data->'feedback') where value->>'id'=(select report::text from feedback_qa);
+ if entry->>'household_name'<>'Feedback QA member household' or entry->>'platform'<>'pwa' or entry->>'message'<>'A helpful idea' or entry->>'author_email'<>'andrew@cyclingcicerone.com' then raise exception 'Report context or server-author identity incorrect';end if;
+ if entry ? 'user_id' or entry ? 'request_id' then raise exception 'Inbox exposed unnecessary internal IDs';end if;
+ perform public.review_app_feedback((select report from feedback_qa),true);
+ data:=public.platform_feedback('reviewed');
+ if (data->>'total')::integer<>1 or (data->>'new_count')::integer<>29 then raise exception 'Review status/filter incorrect';end if;
+ perform public.review_app_feedback((select report from feedback_qa),false);
+ if (public.platform_feedback('reviewed')->>'total')::integer<>0 then raise exception 'Mark new failed';end if;
+end $$;
+reset role;
+set local role anon;
+do $$begin
+ begin perform public.submit_app_feedback(gen_random_uuid(),'general','Anonymous',null,'web','');raise exception 'Anonymous submit allowed';exception when insufficient_privilege then null;end;
+ begin perform public.platform_feedback();raise exception 'Anonymous inbox allowed';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+rollback;
+select 'PASS: signed-in feedback/idea/bug submissions, optional and membership-checked context, server-owned identity, safe retries and rate limits, validation, platform-only inbox/review, pagination, no direct or anonymous access; rolled back' as result;

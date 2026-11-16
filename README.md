@@ -12,7 +12,7 @@ Each completion snapshots its base reward and adjustment rules when logged. Chan
 
 Household admins: see [HOUSEHOLD-ADMINS.md](HOUSEHOLD-ADMINS.md) for co-admins, transfers, and membership approval.
 
-Household creation has one theme selector: Wizard Adventure with gemstones, Parents & Kids with the star calendar, Cat companions (growth/breeding coming later), or Poker Chips (play money/gambling coming later). Teams default off, so individuals gather points; admins can enable teams during creation or in Household settings. Starter chores remain selectable during creation.
+Household creation has one theme selector: Wizard Adventure with gemstones, Parents & Kids with the star calendar, Cat companions (growth/breeding coming later), or Poker Chips with exact-value chip stacks (games coming later). Teams default off, so individuals gather points; admins can enable teams during creation or in Household settings. Starter chores remain selectable during creation.
 
 Admins can also choose **Your household → Delete household** and type its exact name to confirm. This permanently removes the household's shared chores, teams, history, invitations, and notifications for all members. Accounts and other households remain. Its preloaded stickers become unassigned and reusable, including permanently locked stickers. The applied backend addition is documented in `supabase/household-lifecycle.sql`.
 
@@ -40,7 +40,7 @@ The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every
 
 ## Household themes and teams
 
-Open **Your household → Household settings** as an admin. A single theme sets both appearance and rewards. Wizard Adventure uses gemstones, Parents & Kids uses the calendar, and cats/poker use clearly marked previews with chore points for now. The old Squeaky Clean theme migrates to Poker Chips. New households start in individual mode with no teams; choosing teams during creation adds four starter teams. Existing households retain their teams mode until an admin changes it.
+Open **Your household → Household settings** as an admin. A single theme sets both appearance and rewards. Wizard Adventure uses gemstones, Parents & Kids uses the calendar, Poker Chips uses exact-value stacks on a felt table, and cats remains a preview with chore points for now. The old Squeaky Clean theme migrates to Poker Chips. New households start in individual mode with no teams; choosing teams during creation adds four starter teams. Existing households retain their teams mode until an admin changes it.
 
 Teams are optional in every theme. When enabled, admins can add and rename teams, choose reward colours and emblems, and assign members. Members can choose their team. Turning teams off keeps memberships and saved team assignments, but team assignments do not restrict chore eligibility until teams are enabled again. Up to 20 teams are supported.
 
@@ -204,3 +204,19 @@ Backend additions: `supabase/household-experiences.sql`, `supabase/sticker-exper
 ## Team deletion
 
 Household admins can choose **Household settings → Teams → Delete**, then review and confirm the warning. Members become unassigned and can select another team; assigned chores become available to eligible members. Personal points and completion history remain, as do archived weekly winners, team names/colours, and weekly win points. Current-week contributions follow members when they choose their next team. Deleting a team is permanent, and a starter team can be created again through Add starter teams. Backend: `supabase/team-deletion.sql`; rollback checks: `supabase/verify-team-deletion.sql`.
+
+## App feedback
+
+Signed-in users can choose **Feedback, ideas & bug reports** at the bottom of any main app page, including onboarding before joining a household. The form accepts feedback, ideas and bug reports with a required message (up to 4000 characters). It includes account name/email, platform, current screen and the selected household name for follow-up. Reports are visible only to platform admins.
+
+Platform admins can read **Tag workshop → Feedback inbox**, view all/new/reviewed reports, refresh, page through older reports, and mark reports reviewed or new. Household admins do not receive inbox access. There are no automatic emails or external messages.
+
+Feedback is stored in an RLS-protected private table, with authenticated submission and platform-admin-only list/review RPCs. The server determines author identity and checks household membership; identical retries reuse their request ID, and submissions are limited to 10 per hour per account. Backend source: `supabase/app-feedback.sql`; rollback permission/validation/pagination checks: `supabase/verify-app-feedback.sql`.
+
+## Poker chips
+
+The Poker Chips theme shows a felt poker table with current-week individual or team balances and a personal chip stack in team mode. Values are fixed: white 1, red 5, blue 10, green 25, black 100. Each balance is represented with exact change, using the fewest chips; no points are rounded away. Very large stacks cap visible artwork and show the remaining chip count explicitly.
+
+Completing a sticker chore drops the exact earned chips onto a small table. Unexpected chore roulette results also drop their awarded chips. Zero-point completions display no chips. Changing quality/condition ratings updates that completion’s stacks without another award or completion, and reduced-motion settings show the final stacks immediately. Poker games and betting are still future work. No backend migration is needed: authoritative completion points and weekly scoring remain unchanged.
+
+Implementation: `src/rewards/PokerDashboard.jsx`, `src/rewards/PokerChips.jsx`, `src/rewards/poker-chips.js`, `src/rewards/poker.css`. Tests verify exact denomination sums, mobile/desktop and team/individual displays, large balances, rewards, rating edits, and reduced motion.
