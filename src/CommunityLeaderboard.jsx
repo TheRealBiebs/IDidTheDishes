@@ -1,12 +1,15 @@
+import TrophyCase,{TrophyCaseGrid} from './rewards/TrophyCase'
+import {rewardForTheme} from './household-experience'
 import { useEffect,useState } from 'react'
 import { rpc } from './api'
 import './community.css'
 
-const sharing='Participants can see your household name, team names, and weekly win points for the household and its teams. Member names, individual scores, chore details, comments, and photos stay private.'
+const sharing='Participants can see your household name, team names, and weekly win points for the household and its teams, and the theme used to display their trophy cases. Member names, individual scores, chore details, comments, and photos stay private.'
 
 export default function CommunityLeaderboard({household,userId,owner,onCancel}) {
   const preference=`chip-in-community-following:${userId}:${household.id}`
   const [status,setStatus]=useState(null),[data,setData]=useState(null),[accepted,setAccepted]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[revision,setRevision]=useState(0),[offset,setOffset]=useState(0),[leaving,setLeaving]=useState(false)
+  const [expandedHouse,setExpandedHouse]=useState(null)
   const [followingOnly,setFollowingOnly]=useState(()=>{try{return localStorage.getItem(preference)==='true'}catch{return false}})
   useEffect(()=>{
     let active=true
@@ -27,7 +30,7 @@ export default function CommunityLeaderboard({household,userId,owner,onCancel}) 
   async function perform(action){setBusy(true);setError('');try{await action();setStatus(await rpc('community_status',{p_household:household.id}));setRevision(n=>n+1)}catch(e){setError(e.message)}finally{setBusy(false)}}
   function filter(value){setFollowingOnly(value);setOffset(0);setLoading(true);try{localStorage.setItem(preference,String(value))}catch{}}
   const ready=status?.joined&&status?.accepted
-  return <div className="community"><div className="page-heading"><h1>Community leaderboard</h1></div>
+  return <div className="community"><div className="page-heading"><h1>Community trophy cases</h1></div>
     {error&&<div className="form-error" role="alert"><p>{error}</p><button className="text-button" onClick={()=>{setError('');setRevision(n=>n+1)}}>Retry leaderboard</button></div>}
     {!status?<p role="status">Checking community access…</p>:!ready?<section className="panel community-consent">
       <h2>{status.joined?'View the community leaderboard?':'Join the community leaderboard?'}</h2><p>{sharing}</p>
@@ -41,7 +44,8 @@ export default function CommunityLeaderboard({household,userId,owner,onCancel}) 
       {followingOnly&&data?.following_count===0&&<p>Follow households in All households to compare their scores here. Your own household is always included.</p>}
       {loading?<p role="status">Loading weekly scores…</p>:data&&<><ol className="community-list">{data.households.map(h=><li className="panel community-household" key={h.id}>
         <div className="community-household-heading"><span className="community-rank" aria-label={`Community rank ${h.rank}`}>#{h.rank}</span><h2>{h.name}{h.id===household.id&&<small>Your household</small>}</h2><strong className="community-points">{h.points}<small>weekly win points</small></strong></div>
-        {h.teams.length?<table><caption className="sr-only">{h.name} team weekly wins</caption><thead><tr><th scope="col">Team</th><th scope="col">Weekly wins</th></tr></thead><tbody>{h.teams.map(team=><tr key={team.id}><th scope="row">{team.name}</th><td>{team.points}</td></tr>)}</tbody></table>:<p>{h.teams_enabled===false?'Individual mode · only the household’s combined weekly wins are shared.':'No team wins yet.'}</p>}
+        <TrophyCase name={h.name} wins={h.points} mode={h.reward_scheme||rewardForTheme(h.theme)} compact hideName/>
+        {h.teams.length>0?<div className="community-trophy-teams"><button className="text-button" aria-expanded={expandedHouse===h.id} onClick={()=>setExpandedHouse(expandedHouse===h.id?null:h.id)}>{expandedHouse===h.id?'Hide team trophy cases':'Show team trophy cases'}</button>{expandedHouse===h.id&&<TrophyCaseGrid entries={h.teams} mode={h.reward_scheme||rewardForTheme(h.theme)} compact/>}</div>:h.teams_enabled===false&&<p className="muted">Individual mode · only the household’s combined weekly wins are shared.</p>}
         {h.id!==household.id&&<button className="button secondary" aria-label={`${h.following?'Unfollow':'Follow'} ${h.name}`} aria-pressed={h.following} disabled={busy} onClick={()=>perform(async()=>{await rpc('community_follow',{p_household:household.id,p_target:h.id,p_follow:!h.following});if(h.following&&followingOnly)setOffset(0)})}>{h.following?'Following · Unfollow':'Follow household'}</button>}
       </li>)}</ol>{!data.households.length&&<p>No households for this selection.</p>}{data.total>25&&<nav className="community-pagination" aria-label="Community leaderboard pages"><button className="button secondary" disabled={!offset} onClick={()=>setOffset(n=>Math.max(0,n-25))}>Previous</button><span>{offset+1}–{Math.min(offset+25,data.total)} of {data.total}</span><button className="button secondary" disabled={offset+25>=data.total} onClick={()=>setOffset(n=>n+25)}>Next</button></nav>}</>}
       {owner&&<section className="panel community-leave">{leaving?<><h2>Leave the community leaderboard?</h2><p>This removes your household’s name and team scores from the board and closes community access for its members.</p><div className="community-actions"><button className="button secondary" disabled={busy} onClick={()=>perform(async()=>{await rpc('set_community_sharing',{p_household:household.id,p_enabled:false,p_accept:false});setLeaving(false);setAccepted(false)})}>Stop sharing and leave</button><button className="text-button" disabled={busy} onClick={()=>setLeaving(false)}>Cancel</button></div></>:<button className="text-button" onClick={()=>setLeaving(true)}>Leave community leaderboard</button>}</section>}

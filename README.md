@@ -54,7 +54,7 @@ The main components are `src/HouseholdThemes.jsx` and `src/themes.css`. `src/Wiz
 
 ## Weekly competition
 
-Weeks reset Monday at midnight in the household time zone. Individuals compete when teams are off; teams compete when enabled. Wizard/cat/poker experiences use chore points; the star calendar uses completion counts. Each positive winner earns **one weekly win point**, with one each for tied winners. The dashboard leaderboard shows accumulated weekly win points rather than chore-point totals. Closed weeks retain their scoring mode and participants; rating edits and refutation removals correct their awards.
+Weeks reset Monday at midnight in the household time zone. Individuals compete when teams are off; teams compete when enabled. Wizard/cat/poker experiences use chore points; the star calendar uses completion counts. Each positive winner earns **one weekly win point**, with one each for tied winners. The overview shows trophy cases representing accumulated weekly wins, with one collectible per weekly win rather than per chore point. Closed weeks retain their scoring mode and participants; rating edits and refutation removals correct their awards.
 
 On the first visit after a reset, the app settles completed weeks and shows the latest result with gems bursting from the winning jar, stars leaving the calendar, or a trophy for the adventurer preview. A short server-side claim prevents simultaneous devices from showing the same account's celebration. The app records it as seen after the animation or dismissal; a crashed app can retry after the claim expires. Reduced-motion settings are respected. NFC logging still happens immediately before its weekly overlay.
 
@@ -161,7 +161,7 @@ Use `npm run build` and `npm run preview` to check installation/service-worker b
 
 The Leaderboard tab starts with a sharing disclosure. A household admin must explicitly join before the household is listed, and each member must accept the disclosure before viewing the community board. Households are private by default. Admins can leave to stop sharing immediately and revoke community access for all household members; rejoining requires fresh viewer consent.
 
-The community shares household names, team names when teams are enabled, and accumulated weekly win points from completed weeks. Chore-point totals are not shared. In individual mode, only combined household weekly wins appear; no individual identities or scores are exposed. Chore records, comments and photos remain household-private. Following and consent work as before.
+The community shares household names, team names when teams are enabled, accumulated weekly win points from completed weeks, and the household theme/reward mode used to draw its trophy case. Chore-point totals are not shared. In individual mode, only combined household weekly wins appear; no individual identities or scores are exposed. Chore records, comments and photos remain household-private. Following and consent work as before.
 
 Following is private to the signed-in account. The Following filter includes selected households and the viewer's own household; its selected view is remembered per account/household in the browser. Rankings retain their overall community position. Results are paginated in groups of 25 and refresh periodically while the tab is visible.
 
@@ -220,3 +220,25 @@ The Poker Chips theme shows a felt poker table with current-week individual or t
 Completing a sticker chore drops the exact earned chips onto a small table. Unexpected chore roulette results also drop their awarded chips. Zero-point completions display no chips. Changing quality/condition ratings updates that completion’s stacks without another award or completion, and reduced-motion settings show the final stacks immediately. Poker games and betting are still future work. No backend migration is needed: authoritative completion points and weekly scoring remain unchanged.
 
 Implementation: `src/rewards/PokerDashboard.jsx`, `src/rewards/PokerChips.jsx`, `src/rewards/poker-chips.js`, `src/rewards/poker.css`. Tests verify exact denomination sums, mobile/desktop and team/individual displays, large balances, rewards, rating edits, and reduced motion.
+
+## Weekly trophy cases
+
+The overview’s household leaderboard is replaced by one trophy case per current member or active team. Each weekly win point adds exactly one collectible. Wizard Adventure uses ornate house cups, Poker Chips uses chip trophies on pedestals, the cat theme uses sleeping cat figurines, and Parents & Kids uses large gold stars on a winning-weeks calendar. These are weekly-win awards, separate from daily chore points, poker chips, or calendar stars earned per chore.
+
+Shelves fill neatly at first. Once crowded, a deterministic collision/settling layout piles and tilts the collectibles; existing objects shift as new awards are added. Reduced-motion preferences disable movement. Very large collections keep their exact total while bounding the visible artwork to 75 objects (45 for community cases), explicitly labelling the rest of the pile.
+
+Hall of Fame uses the same cases above its unchanged weekly chore drilldown, preserving former teams’ and past winners’ records. The Leaderboard tab shows each participating household’s case in its own reward mode, and team cases can be expanded one household at a time. Individual identities and scores remain private in community view; only combined household weekly wins are shown in individual mode. Following and consent still apply.
+
+Cases are derived from server-issued weekly awards; no separate trophy balance can drift from the results. Changing the household theme restyles its existing collection without deleting wins. Backend appearance metadata: `supabase/community-trophy-appearance.sql`; rollback privacy/appearance checks: `supabase/verify-community-trophies.sql`. Implementation: `src/rewards/TrophyCase.jsx`, `src/rewards/trophy-layout.js`, and `src/rewards/trophies.css`.
+
+## First-run household tutorial
+
+After a signed-in user creates or joins a household and its data is ready, Chip In offers a guided tour. Each user gets their own progress for each household. Existing members without a saved tour record also receive the first-run prompt once when this feature is introduced. Users can choose Start tour or Not now, move Back/Next, finish, or skip with the close button/Escape. **Replay tutorial** is beside the feedback link at the bottom of app pages.
+
+The tour moves between tabs, scrolls relevant controls into view, and animates a spotlight and floating explanation. Members see member features; admins additionally see chore configuration, sticker claims/management, household themes/teams, roles and invitations. Team-only steps are omitted when teams are off. Platform admins also get workshop and feedback-inbox steps. The tour explains rewards, unfinished assignments, total drilldowns, weekly trophy cases, likes/comments/refutations, unexpected chores, Hall of Fame history, phone notifications, community consent/following, and feedback. It never activates highlighted controls, joins the community, requests notification permission, writes stickers, or logs chores.
+
+Progress is stored privately in Supabase, per authenticated user/household/version. Active tours resume at their last saved step; completed/skipped tours do not reopen automatically. Replaying starts from the beginning. Household membership is required for every read/write, and other members cannot access one another’s progress.
+
+Tutorials wait for an open modal, password recovery, invitation/completion routes, and NFC sticker handling to finish. Accounts without a household do onboarding first. Direct workshop launches do not interrupt batch writing with an automatic tour, and replay is disabled on the workshop tab; return to another tab to replay. The original tab and scroll position are restored on finish/skip. Keyboard focus stays in the tour, Escape remains usable after save errors, controls fit small viewports, and reduced-motion preferences disable scrolling/spotlight animation.
+
+Backend: `supabase/household-tutorial.sql`; rollback checks: `supabase/verify-household-tutorial.sql`. UI: `src/tutorial/HouseholdTutorial.jsx`, step definitions and positioning: `src/tutorial/steps.js`. Unit and browser checks cover permissions, first-run/resume/replay/skip, member/admin/platform routes, keyboard interaction, small/desktop layouts, save errors, and scan/onboarding deferral.

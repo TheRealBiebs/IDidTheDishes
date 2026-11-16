@@ -21,7 +21,7 @@ Gemstone tubes show individual members when teams are off and team totals when o
 
 Completions retain base points and configured quality/condition adjustments in every theme. Stars always count one per completion. Wizard, cat and poker weekly competitions use chore points; Parents & Kids uses completed chores. Each positive winning individual/team gets one weekly win point; ties award one to each winner. Empty weeks award none.
 
-The dashboard leaderboard displays accumulated weekly win points for the active scoring mode. Hall of Fame retains each week’s mode, participants, reward rules and chore history. Rating edits and refutation removals correct archived awards. Community rankings share accumulated household/team weekly win points, with individual identities and scores kept private.
+The overview displays a trophy case per participant in the active scoring mode. One weekly win point means one house cup, poker-chip trophy, sleeping cat, or calendar gold star, depending on the household theme. Collectibles settle into increasingly crowded shelves, and existing objects shift as the pile grows. Hall of Fame retains each week’s mode, participants, reward rules and chore history. Rating edits and refutation removals correct archived awards. Community rankings show each household’s themed trophy case and optionally its teams’ cases, using accumulated weekly win points. Individual identities and scores remain private. The case is derived from authoritative weekly awards, so rating/refutation corrections also correct the displayed collection.
 
 ## Backend and validation
 

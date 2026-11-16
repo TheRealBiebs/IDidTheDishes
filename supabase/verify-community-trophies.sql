@@ -1,0 +1,30 @@
+begin;
+create temp table trophy_qa(a uuid,b uuid,h uuid,other_h uuid);
+grant all on trophy_qa to authenticated;
+insert into trophy_qa(a,b) select (select id from auth.users where email='andrewpbieber@gmail.com'),(select id from auth.users where email='andrew@cyclingcicerone.com');
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select a from trophy_qa),'role','authenticated')::text,true);
+set local role authenticated;
+update trophy_qa set h=public.create_household_experience('Trophy household A','Private member A','UTC','wizard','{}');
+select public.set_community_sharing(h,true,true) from trophy_qa;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select b from trophy_qa),'role','authenticated')::text,true);
+update trophy_qa set other_h=public.create_household_experience('Trophy household B','Private member B','UTC','parents','{}',true);
+select public.set_community_sharing(other_h,true,true) from trophy_qa;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select a from trophy_qa),'role','authenticated')::text,true);
+do $$declare board jsonb;entry jsonb;begin
+ board:=public.community_board((select h from trophy_qa));
+ select value into entry from jsonb_array_elements(board->'households') where value->>'id'=(select other_h::text from trophy_qa);
+ if entry->>'theme'<>'parents' or entry->>'reward_scheme'<>'stars' or (entry->>'points')::integer<>0 then raise exception 'Community trophy appearance or authoritative wins incorrect';end if;
+ if board::text like '%Private member%' or board::text like '%andrew@cyclingcicerone.com%' or board::text like '%'||(select b::text from trophy_qa)||'%' then raise exception 'Community exposed private member information';end if;
+ if exists(select 1 from public.household_members where household_id=(select other_h from trophy_qa)) then raise exception 'Foreign household member rows exposed';end if;
+ begin perform public.community_board((select other_h from trophy_qa));raise exception 'Foreign household access granted';exception when others then if sqlerrm<>'Join this household first.' then raise;end if;end;
+end $$;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select b from trophy_qa),'role','authenticated')::text,true);
+select public.set_household_experience(other_h,'poker',true) from trophy_qa;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select a from trophy_qa),'role','authenticated')::text,true);
+do $$declare entry jsonb;begin
+ select value into entry from jsonb_array_elements(public.community_board((select h from trophy_qa))->'households') where value->>'id'=(select other_h::text from trophy_qa);
+ if entry->>'theme'<>'poker' or entry->>'reward_scheme'<>'poker' or (entry->>'points')::integer<>0 then raise exception 'Case appearance did not follow household mode without changing wins';end if;
+end $$;
+reset role;
+rollback;
+select 'PASS: community cases receive each household theme/reward mode and unchanged weekly wins, with membership, consent and private member information protected; rolled back' as result;
