@@ -4,20 +4,20 @@
 
 Platform-admin access is separate from household administration. The selected account, `andrewpbieber@gmail.com`, has access to **Tag workshop** in the app navigation. Ordinary household admins cannot issue inventory or grant themselves platform access.
 
-1. Create a named **writing session**. No sticker count is required.
-2. In the Android app, choose the session and press **Start writing** once. Tap a blank NDEF-compatible sticker, wait for verification, then remove it and tap the next. Each sticker gets a newly registered, unique URL. No chore or household is assigned during writing.
+1. Open **Tag workshop** in the Android app. No session name, saved session or sticker count is required.
+2. Press **Start writing** once. Tap a blank NDEF-compatible sticker, wait for verification, then remove it and tap the next. Each sticker gets a newly registered, unique URL. No chore or household is assigned during writing.
 3. If a sticker first needs formatting, the writer automatically asks you to remove and retap the same sticker to verify the same URL. It does not advance until verification and registration succeed.
 4. Optional permanent locking still requires the irreversible-operation checkbox. Supported tags are locked only after URL readback. Unsupported locking is reported, and the sticker is registered as unlocked.
-5. Press **Stop writing** when finished. Resume keeps the pending URL. Failed server acknowledgements retain the verified receipt for retry without rewriting the sticker. Pending reservations remain unclaimable until registered as verified. After reopening the app, use **Verify existing sticker** for a pending physical sticker, or start writing more blanks.
+5. Press **Stop writing** when finished. Turning writing mode back on keeps the pending URL. Failed server acknowledgements retain the verified receipt for retry without rewriting the sticker. Pending reservations remain unclaimable until registered as verified. After reopening the app, use **Find a written sticker to verify** for a pending physical sticker, or start writing more blanks.
 6. Give verified stickers to friends. Scanning an unclaimed sticker as a household admin goes directly to claim/configuration: choose from the household's chore list or configure a new custom chore. Chores with an existing sticker are shown but unavailable until their sticker is released.
 
 ### If writing succeeds but immediate verification cannot read the URL
 
 The writer keeps the pending URL and asks for a removal and retap of the same physical sticker. It does not register or lock it until that read matches exactly. Readback errors and mismatches after a completed write use this retap flow; an existing correct URL is verified using its initial live read instead of a redundant second read.
 
-For stickers left on “This sticker is being prepared” by an older app, choose their writing session and **Find a written sticker to verify**. Scan the sticker to find its pending URL, then remove and retap it for exact verification. No rewrite is needed. This requires the next APK containing the verification fix. If several failed attempts programmed different physical stickers with the same pending URL, those are copies of one sticker identity; verifying one does not give the copies distinct identities.
+For stickers left on “This sticker is being prepared” by an older app, press **Find a written sticker to verify**. Scan the sticker to find its pending URL, then remove and retap it for exact verification. No rewrite is needed. If several failed attempts programmed different physical stickers with the same pending URL, those are copies of one sticker identity; verifying one does not give the copies distinct identities.
 
-The browser workshop can create sessions and export URLs. Physical writing/verification use Android. These continuous-writing changes need a future rebuilt APK; no APK was built for this change. Leaving the workshop or hiding the app stops the writer. While armed, normal scanned links do not navigate away or award chores.
+Physical writing/verification use Android; the browser workshop explains this and disables writing controls. These UI changes need a future rebuilt APK; no APK was built for this change. Leaving the workshop or hiding the app stops the writer. While armed, normal scanned links do not navigate away or award chores.
 
 Permanent locking prevents rewriting the physical URL on supported tags. It cannot be undone. Household assignment and chore settings remain changeable in the database, so a locked sticker can still be released and reused. Losing the hosting domain would affect locked stickers; keep these URLs stable. Locking does not prevent somebody copying a URL onto another sticker.
 
@@ -52,6 +52,8 @@ Release makes the same physical URL available for a new claim. The original chor
 
 ## Backend and verification
 
-Applied SQL sources: `supabase/continuous-sticker-writing.sql`, `supabase/preloaded-stickers.sql`, `sticker-admin-households.sql`, `sticker-inventory-policies.sql`, and `sticker-release-request-feedback.sql`. These are migration references, not scripts to rerun on the existing project. Platform access is stored in a private server-managed table, never user-editable metadata. Inventory is private; clients use guarded RPCs. Existing assigned sticker URLs were migrated and remain valid.
+Applied SQL sources: `supabase/sessionless-sticker-writing.sql` (sessionless reservation and exact-token recovery), `supabase/continuous-sticker-writing.sql` (legacy writer compatibility), `supabase/preloaded-stickers.sql`, `sticker-admin-households.sql`, `sticker-inventory-policies.sql`, and `sticker-release-request-feedback.sql`. These are migration references, not scripts to rerun on the existing project. Platform access is stored in a private server-managed table, never user-editable metadata. Inventory is private; clients use guarded RPCs. Existing assigned sticker URLs were migrated and remain valid.
 
 Verification covered rolled-back database fixtures for roles, public privacy, atomic claims, cross-household isolation, release/reclaim, history, and daily limits; 15 unit tests; a production frontend build; and browser fixtures for public/member/admin flows and simulated Android write/verify/lock receipts. Java changes have not been compiled or tested against real NFC hardware. Physical readback, retap, permanent locking, and Android deep-link behavior still need a device test after the next requested APK build.
+
+Sessionless verification: `supabase/verify-sessionless-sticker-writing.sql` checks platform authorization, idempotent reservations without session rows, verified/locked availability, and recovery of old pending stickers.

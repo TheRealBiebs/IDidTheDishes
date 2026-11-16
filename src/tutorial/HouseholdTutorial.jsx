@@ -10,7 +10,7 @@ const visibleTarget=selectors=>selectors.flatMap(selector=>[...document.querySel
 
 export default function HouseholdTutorial({userId,household,admin,platformAdmin,hasChores,ready,canStart,replayToken,view,onViewChange,onActiveChange}){
  const identity=userId&&household?.id?`${userId}:${household.id}`:''
- const steps=useMemo(()=>tutorialSteps({admin,platformAdmin,hasChores,teams:household?.teams_enabled===true,reward:household?.reward_scheme}),[admin,platformAdmin,hasChores,household?.teams_enabled,household?.reward_scheme])
+ const steps=useMemo(()=>tutorialSteps({admin,platformAdmin,hasChores,teams:household?.teams_enabled===true,reward:household?.reward_scheme}),[admin])
  const [phase,setPhase]=useState('checking'),[stepId,setStepId]=useState(null),[saving,setSaving]=useState(false),[error,setError]=useState(''),[rect,setRect]=useState(null),[screen,setScreen]=useState(viewport),[cardHeight,setCardHeight]=useState(270)
  const loaded=useRef(''),identityRef=useRef(identity),generation=useRef(0),inFlight=useRef(false),queue=useRef(Promise.resolve()),seenReplay=useRef(replayToken),returnView=useRef(view),returnScroll=useRef(0),previousFocus=useRef(null),card=useRef(null)
  const titleId=useId(),bodyId=useId(),index=tutorialStepIndex(steps,stepId),step=steps[index]
@@ -105,7 +105,7 @@ export default function HouseholdTutorial({userId,household,admin,platformAdmin,
   <section ref={card} className={`tutorial-card tutorial-${position.side}`} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={bodyId} style={{left:position.left,top:position.top,width:position.width,'--tutorial-arrow':`${position.arrow}px`,maxHeight:Math.max(100,screen.height-24)}}>
    <div className="tutorial-card-top"><span aria-live="polite">{phase==='welcome'?'CHIP IN':`${TAB_NAMES[step.view]} · ${index+1} of ${steps.length}`}</span><button type="button" className="tutorial-close" aria-label="Skip tutorial" onClick={dismiss}>×</button></div>
    <h2 id={titleId} tabIndex={-1}>{phase==='welcome'?'A quick tour of Chip In':step.title}</h2>
-   <p id={bodyId}>{phase==='welcome'?`Welcome to ${household.name}. Take a guided look around the tabs and learn how to log chores, collect rewards, manage your household, and compare weekly wins. You can skip now and replay the tutorial later.`:step.body}</p>
+   <p id={bodyId}>{phase==='welcome'?`${steps.length} quick tips for ${household.name}: chores, ${admin?'adding members, ':''}daily scores, weekly trophies and feedback. Skip or replay anytime.`:step.body}</p>
    {error&&<p className="tutorial-error" role="alert">{error}</p>}
    {phase==='welcome'?<div className="tutorial-actions"><button type="button" className="tutorial-secondary" onClick={dismiss}>Not now</button><button type="button" className="tutorial-primary" onClick={start}>Start tour</button></div>:<><div className="tutorial-progress" aria-hidden="true"><span style={{width:`${(index+1)/steps.length*100}%`}}/></div><div className="tutorial-actions"><button type="button" className="tutorial-secondary" disabled={saving||index===0} onClick={()=>move(index-1)}>Back</button><button type="button" className="tutorial-primary" disabled={saving} onClick={()=>move(index+1)}>{saving?'Saving…':index===steps.length-1?'Finish tour':'Next'}</button></div><button type="button" className="tutorial-skip" onClick={dismiss}>Skip tutorial</button></>}
   </section>

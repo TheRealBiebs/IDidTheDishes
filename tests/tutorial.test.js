@@ -2,15 +2,18 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {tutorialSteps,tutorialStepIndex,tutorialPlacement} from '../src/tutorial/steps.js'
 
-test('the tour covers every regular tab and only offers role-appropriate controls',()=>{
+test('the focused tour has no more than six screens including welcome, for every role and mode',()=>{
  const member=tutorialSteps(),admin=tutorialSteps({admin:true,teams:true,hasChores:true,platformAdmin:true,reward:'poker'})
- assert.deepEqual([...new Set(member.map(step=>step.view))],['dashboard','chores','household','notifications','community'])
- for(const id of ['create-chore','claim-sticker','manage-chore','household-settings','invitations','workshop','feedback-inbox','assignments','choose-team'])assert.ok(!member.some(step=>step.id===id))
- for(const id of ['create-chore','claim-sticker','manage-chore','household-settings','invitations','workshop','feedback-inbox','assignments','choose-team'])assert.ok(admin.some(step=>step.id===id))
- assert.equal(new Set(admin.map(step=>step.id)).size,admin.length)
- assert.ok(!tutorialSteps({admin:true}).some(step=>step.id==='manage-chore'))
- assert.match(admin.find(step=>step.id==='rewards').body,/chip stacks/)
- assert.equal(tutorialStepIndex(member,'create-chore'),0);assert.equal(tutorialStepIndex(member,'community'),member.findIndex(step=>step.id==='community'))
+ assert.deepEqual(admin.map(step=>step.id),['create-chore','invitations','totals','trophies','help'])
+ assert.deepEqual(member.map(step=>step.id),['chores','totals','trophies','help'])
+ for(const isAdmin of [false,true])for(const platformAdmin of [false,true])for(const reward of ['points','poker','cats','stars']){
+  const steps=tutorialSteps({admin:isAdmin,platformAdmin,teams:true,hasChores:true,reward})
+  assert.ok(steps.length+1<=6,'Welcome counts toward the six-screen limit')
+  assert.ok(steps.every(step=>step.body.split(/\s+/).length<=35),'Each explanation stays focused')
+  assert.ok(!steps.some(step=>['notifications','community','workshop'].includes(step.view)))
+ }
+ assert.equal(tutorialStepIndex(member,'create-chore'),0);assert.equal(tutorialStepIndex(member,'phone-notifications'),0)
+ assert.equal(tutorialStepIndex(admin,'invitations'),1)
 })
 test('fly-around cards stay inside narrow and short viewports, above or below their highlight',()=>{
  const viewport={width:390,height:844}
