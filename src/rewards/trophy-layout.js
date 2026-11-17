@@ -1,39 +1,43 @@
-export const TROPHY_SHELVES=[228,155,82]
+export const TROPHY_SHELVES=[330,220,110]
 export const TROPHY_CAPACITY=15
 export const MAX_VISIBLE_TROPHIES=75
 export const trophyKind=mode=>['stars','parents'].includes(mode)?'stars':mode==='cats'?'cats':mode==='poker'?'poker':'wizard'
-export const trophyWord=mode=>({wizard:'cup',poker:'chip trophy',cats:'sleeping cat',stars:'gold star'})[trophyKind(mode)]
-const noise=seed=>{const x=Math.sin(seed*127.1+311.7)*43758.5453;return x-Math.floor(x)}
-const clamp=(n,a,b)=>Math.min(b,Math.max(a,n))
-
-// Settle a small, bounded soft-body pile on each shelf. Recomputing as a new
-// win arrives moves the existing objects too; CSS animates those pushes.
-function pile(indices,shelf){
- const floor=TROPHY_SHELVES[shelf],n=indices.length
- if(n<=5)return indices.map((id,i)=>({id,shelf,x:150+(i-(n-1)/2)*52,y:floor,angle:(noise(id+1)-.5)*4}))
- const nodes=indices.map((id,i)=>({id,shelf,x:i<5?46+i*52:38+noise(id+9)*224,y:floor-26-(i<5?0:36*noise(id+7)),vx:0,vy:0}))
- const separation=44-Math.min(9,Math.max(0,n-10)*.7)
- for(let step=0;step<60;step++){
-  for(const a of nodes){a.vy=(a.vy+.36)*.85;a.vx*=.75;a.x+=a.vx;a.y+=a.vy}
-  for(let iteration=0;iteration<2;iteration++){
-   for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
-    const a=nodes[i],b=nodes[j];let dx=b.x-a.x,dy=b.y-a.y
-    if(Math.abs(dx)+Math.abs(dy)<.001){dx=.1;dy=-.1}
-    const distance=Math.hypot(dx,dy)
-    if(distance<separation){const push=(separation-distance)*.3;dx=dx/distance*push;dy=dy/distance*push;a.x-=dx;a.y-=dy;b.x+=dx;b.y+=dy}
-   }
-   for(const a of nodes){a.x=clamp(a.x,26,274);a.y=clamp(a.y,floor-70,floor-26)}
-  }
- }
- const pressure=Math.min(1,(n-5)/9)
- return nodes.map((node,i)=>({id:node.id,shelf,x:node.x,y:node.y+26,angle:(noise(node.id+19)-.5)*(i<5?35:150)*pressure}))
+export const trophyWord=mode=>({wizard:'cup',poker:'chip stack',cats:'sleeping cat',stars:'glass sticker'})[trophyKind(mode)]
+export const cabinetStage=total=>total===0?'empty':total<=5?'starting':total<=15?'filling':total<=30?'crowded':'overstuffed'
+export function chipPileParts(total,limit=75){
+ if(!Number.isSafeInteger(total)||total<0)throw new RangeError('Choose an exact nonnegative chip total.')
+ // Fixed visual units make a growing bank grow monotonically, including at denomination boundaries.
+ const chips=Math.ceil(total/25),stacks=Math.ceil(chips/20)
+ return {stacks,hidden:Math.max(0,stacks-limit),parts:Array.from({length:Math.min(stacks,limit)},(_,i)=>({part:i,layers:Math.min(20,chips-i*20),w:25,h:8+Math.min(20,chips-i*20)*.8}))}
 }
-export function trophyLayout(wins,{maxVisible=MAX_VISIBLE_TROPHIES}={}){
- const total=Number(wins)
- if(!Number.isSafeInteger(total)||total<0)throw new RangeError('Weekly wins must be a nonnegative safe integer.')
- if(!Number.isInteger(maxVisible)||maxVisible<15||maxVisible>MAX_VISIBLE_TROPHIES)throw new RangeError('Choose a bounded trophy display size.')
- const count=Math.min(total,maxVisible),rows=[[],[],[]]
- for(let i=0;i<count;i++){const shelf=i<15?Math.floor(i/5):(i-15)%3;rows[shelf].push(i)}
- const stage=total===0?'empty':total<=5?'starting':total<=15?'filling':total<=30?'crowded':'overstuffed'
- return {total,hidden:total-count,stage,items:rows.flatMap((indices,shelf)=>pile(indices,shelf)).sort((a,b)=>a.id-b.id)}
+function validateLimit(n){if(!Number.isInteger(n)||n<15||n>75)throw new RangeError('Choose a bounded trophy display size.')}
+function supportedPosition(item,placed){
+ let best=null
+ for(let x=Math.ceil(9+item.w/2);x<=291-item.w/2;x++){
+  let y=102
+  for(const p of placed)if(Math.abs(x-p.x)<(item.w+p.w)/2+1)y=Math.min(y,p.localY-p.h)
+  if(y-item.h<8)continue
+  if(!best||y>best.localY+.001||Math.abs(y-best.localY)<.001&&Math.abs(x-150)<Math.abs(best.x-150))best={x,localY:y}
+ }
+ return best
+}
+export function cabinetLayout(trophies,{maxVisible=75}={}){
+ validateLimit(maxVisible)
+ const groups={wizard:[],cats:[],poker:[]};let intended=0
+ trophies.forEach((t,index)=>{const group=trophyKind(t.mode);if(group==='stars')return
+  if(group==='poker'){if(t.kind!=='poker_bank')return;const bank=chipPileParts(Number(t.bank_total||0),maxVisible);intended+=bank.stacks;groups.poker.push(...bank.parts.map(p=>({...p,index,group,key:t.id+':'+p.part})));return}
+  intended++;if(groups[group].length<maxVisible)groups[group].push({index,id:index,key:t.id||String(index),group,w:group==='cats'?38:34,h:group==='cats'?30:38})
+ })
+ const items=[];let shelf=-1
+ for(const [group,parts] of Object.entries(groups)){
+  if(!parts.length)continue;shelf++;let placed=[]
+  for(const item of parts){if(items.length>=maxVisible)break;let position=supportedPosition(item,placed);if(!position){shelf++;placed=[];position=supportedPosition(item,placed)}const p={...item,...position,shelf,angle:0};placed.push(p);items.push(p)}
+ }
+ const shelves=Math.max(3,shelf+1),height=shelves*110+10
+ return {total:trophies.length,stage:cabinetStage(trophies.length),hidden:Math.max(0,intended-items.length),shelves: Array.from({length:shelves},(_,i)=>(shelves-i)*110),height,width:300,items:items.map(p=>({...p,id:p.index,y:(shelves-1-p.shelf)*110+p.localY+8}))}
+}
+export function trophyLayout(wins,{maxVisible=75}={}){
+ if(!Number.isSafeInteger(wins)||wins<0)throw new RangeError('Weekly wins must be a nonnegative safe integer.')
+ const result=cabinetLayout(Array.from({length:Math.min(wins,maxVisible)},(_,id)=>({id:String(id),mode:'points'})),{maxVisible})
+ return {...result,total:wins,stage:cabinetStage(wins),hidden:Math.max(0,wins-result.items.length)}
 }

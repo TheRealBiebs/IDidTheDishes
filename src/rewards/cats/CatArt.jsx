@@ -1,7 +1,7 @@
 import {catType} from './catalog'
 export default function CatArt({type=0,sleeping=false,pose='',label,small=false}){
  const [breed,fur,mark,pattern]=catType(type),asleep=sleeping||pose==='sleep',ears=pattern==='fold'
- return <svg viewBox="0 0 200 160" className={`companion-cat cat-pose-${pose||'idle'} ${small?'cat-small trophy-art':''}`} role={label?'img':undefined} aria-label={label||undefined} aria-hidden={!label}>
+ return <svg viewBox={small?"0 0 200 145":"0 0 200 160"} preserveAspectRatio={small?"none":undefined} className={`companion-cat cat-pose-${pose||'idle'} ${small?'cat-small trophy-art':''}`} role={label?'img':undefined} aria-label={label||undefined} aria-hidden={!label}>
   <ellipse cx="101" cy="144" rx="74" ry="10" fill="#75586c" opacity=".16"/>
   <g className="cat-body"><path d="M151 110q42-43 31-61-7-10-13 1-6 13 5 20 4 14-22 24" fill="none" stroke={fur} strokeWidth="17" strokeLinecap="round"/>
   <ellipse cx="112" cy="107" rx="55" ry="35" fill={fur}/>

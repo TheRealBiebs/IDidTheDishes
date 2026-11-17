@@ -276,7 +276,7 @@ Members can name/rename their current cat (1–40 characters). An unearned compa
 
 The trophy gallery displays one selected case at a time. In team mode, a member’s personal awards are displayed in their current team case without duplicating awards or changing ownership. When teams are off, personal cases are shown. Frame/backdrop colors and wood/brass/modern finishes are editable by the case owner, team members, or household admins. Hover/focus/tap any trophy for its winning date, week and points/chores; cat trophies also show their name, breed and qualifying days. The empty message is “No trophies to display yet”.
 
-Sticker-calendar chores offer 17 sticker choices under Additional Settings. The sticker is saved with each completion, so changing a chore’s choice affects future completions only. Unexpected chores use the default star. All completions still count as one calendar sticker.
+Sticker-calendar chores offer 17 sticker choices under Household settings → Reward System Settings. The sticker is saved with each completion, so changing a chore’s choice affects future completions only. Unexpected chores use the default star. All completions still count as one calendar sticker.
 
 Applied source order: cat-names-and-carryover.sql, named-cat-dashboard.sql, save-cat-settings.sql, chore-calendar-stickers.sql, trophy-case-personalization.sql, named-cat-weekly-results.sql, community-combined-cases.sql. Sources are in supabase/ and are references for the already-updated project. Verification: supabase/verify-personalized-rewards.sql.
 
@@ -295,3 +295,8 @@ Wizard gemstone celebrations share the dashboard’s brass/glass tube and SVG ge
 Cat activity implementation: `supabase/cat-care-activities.sql` is applied. Private per-week day-plan snapshots feed daily satisfaction, care unlocks and weekly trophy settlement. Admin configuration validates household-owned, non-deleted chores. `tests/cat-activities.sql` uses rolled-back fixtures to check full-target interactions, mapped chores, member isolation, historic requirements and trophies earned without care clicks. `tests/cat-activities.test.js` checks awake/sleep rules, independent unlocks and household-clock/DST boundaries.
 
 Reward-system labels are House Cup (wizard), Cozy Cats (cats), Chore Casino (poker) and Sticker Calendar (parents). Stored IDs and saved history keep their existing values. Household settings includes per-system guidance under Reward System Settings, cat controls for Cozy Cats, and a team explanation. The starter-team action has been removed from this screen; teams can be created individually with Add team.
+
+
+Sticker Calendar awards a glass sticker to every member with completions on all seven distinct household-local days of a closed week, regardless of teams. Admins select the weekly design and per-chore stickers in Reward System Settings. Earned designs and week details are snapshots. Owners tap/drag and tilt awards in a placement mini-game; positions persist and can be adjusted later. Historical qualifying weeks are backfilled from archived completions.
+
+Cabinets group cups, cats and banked chips into supported piles, expanding across shelves. Legacy poker medallions and old weekly star trophies are hidden; banked balances remain unchanged. Chip piles use representative 25-chip visual units with exact balances labeled and a bounded render count. Glass stickers sit above the cabinet reflection. Backend: supabase/glass-stickers-and-cabinet.sql; rollback verification: tests/glass-stickers.sql.
