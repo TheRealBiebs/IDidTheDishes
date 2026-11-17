@@ -4,3 +4,5 @@
 .chore-card-actions{display:flex;gap:10px;margin-top:14px}.chore-card-actions>.button{flex:1;min-width:0;white-space:normal;font-size:12px;padding:12px}@media(max-width:360px){.chore-card-actions{flex-direction:column}}
 
 .chore-additional-settings{margin:20px 0;padding:16px;border:1px solid var(--line,#99845944);border-radius:10px}.chore-additional-settings>summary{cursor:pointer;font-weight:700;color:var(--text);padding:4px 0}.chore-additional-settings[open]>summary{margin-bottom:18px}.chore-additional-settings .trait-reward-settings{margin-bottom:0}
+
+.chore-card-top .chore-do-button{padding:8px 13px;min-height:36px;font-size:12px}.chore-card-actions .chore-delete-link{flex:0 0 auto;align-self:center;min-height:32px;padding:5px 0;font-size:11px;font-weight:500;background:none;border:0;color:var(--quiet,#a99d88)}

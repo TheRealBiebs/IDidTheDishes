@@ -1,0 +1,41 @@
+begin;
+create temp table all_cooldown_qa(a uuid,b uuid,h uuid,t uuid,once_tag uuid,token uuid,frequency text);
+grant all on all_cooldown_qa to authenticated;
+insert into all_cooldown_qa(a,b) values(gen_random_uuid(),gen_random_uuid());
+insert into auth.users(id,email) select a,'all-cooldown-a-'||a||'@example.invalid' from all_cooldown_qa union all select b,'all-cooldown-b-'||b||'@example.invalid' from all_cooldown_qa;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select a from all_cooldown_qa),'role','authenticated')::text,true);
+update all_cooldown_qa set h=public.create_household_experience('All cooldown QA','Admin','UTC','wizard','{}');
+insert into public.household_members(household_id,user_id,display_name,role) select h,b,'Member','member' from all_cooldown_qa;
+do $$declare q record;freq text;d date;begin
+ for freq in select unnest(array['daily','weekly','monthly']) loop
+  select * into q from all_cooldown_qa;
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',q.a,'role','authenticated')::text,true);
+  update all_cooldown_qa set t=public.save_chore_rewards(h,null,'Repeat cooldown '||freq,'',10,3,'{}',true,2880,freq,null,'{}'),once_tag=public.save_chore_rewards(h,null,'Once cooldown '||freq,'',10,1,'{}',true,44640,freq,null,'{}');
+  select * into q from all_cooldown_qa;
+  perform public.complete_chore_by_id(q.t,gen_random_uuid());
+  insert into app_private.sticker_inventory(token,chore_tag_id,household_id,written_at) select token,id,household_id,now() from public.chore_tags where id=q.t;
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',q.b,'role','authenticated')::text,true);
+  begin perform public.complete_chore((select token from public.chore_tags where id=q.t),gen_random_uuid());raise exception 'NFC bypassed cooldown';exception when others then if sqlerrm not like 'This chore is cooling down.%' then raise;end if;end;
+  update public.chore_completions set completed_at=now()-interval '3 days' where tag_id=q.t;
+  perform public.complete_chore_by_id(q.t,gen_random_uuid());
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',q.a,'role','authenticated')::text,true);
+  perform public.complete_chore_by_id(q.once_tag,gen_random_uuid());
+  d:=app_private.chore_period_start((now() at time zone 'UTC')::date,freq);
+  update public.chore_completions set chore_date=d-1 where tag_id=q.once_tag;
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',q.b,'role','authenticated')::text,true);
+  begin perform public.complete_chore_by_id(q.once_tag,gen_random_uuid());raise exception 'Period reset bypassed single-use cooldown';exception when others then if sqlerrm not like 'This chore is cooling down.%' then raise;end if;end;
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',q.a,'role','authenticated')::text,true);
+  perform public.save_chore_rewards(q.h,q.once_tag,'Once cooldown '||freq,'',10,1,'{}',true,0,freq,null,'{}');
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',q.b,'role','authenticated')::text,true);
+  perform public.complete_chore_by_id(q.once_tag,gen_random_uuid());
+ end loop;
+ if app_private.chore_cooldown_minutes(1,120)<>120 or app_private.chore_cooldown_minutes(1,null)<>0 or app_private.chore_cooldown_minutes(3,null)<>240 then raise exception 'Cooldown formula mismatch';end if;
+end $$;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select a from all_cooldown_qa),'role','authenticated')::text,true);
+set local role authenticated;
+do $$begin
+ begin perform public.save_chore_rewards(h,null,'Too long','',10,2,'{}',true,44641,'monthly',null,'{}') from all_cooldown_qa;raise exception 'Out-of-range duration accepted';exception when others then if sqlerrm<>'Choose a cooldown from 1 to 44640 minutes, automatic, or no cooldown.' then raise;end if;end;
+end $$;
+reset role;
+select 'PASS: all three frequencies, manual/NFC shared waits, elapsed cooldowns, once-per-period cooldowns across resets, disabled cooldowns, 31-day storage and upper bound' as result;
+rollback;

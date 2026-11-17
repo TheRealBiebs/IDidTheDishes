@@ -139,7 +139,7 @@ The Edge Function source is `supabase/functions/chore-push/index.ts`. Deploy thr
 
 ## Chore cooldowns
 
-Household admins can choose Automatic, Custom duration, or No cooldown when configuring a chore that can be done more than once daily. Automatic is 720 minutes divided by the daily limit, rounded to the nearest minute (three per day means four hours). Changing the daily limit updates the automatic wait. Custom waits range from 1 to 1440 minutes.
+Household admins choose Automatic, Custom duration, or No cooldown under Additional Settings for daily, weekly and monthly chores. Automatic is 720 minutes divided by the selected period’s completion limit, rounded to the nearest minute (a limit of three means four hours); an automatic limit of one has no extra wait. Custom durations also apply to once-per-period chores and range from one minute to 31 days, with minutes/hours/days inputs.
 
 The wait is shared across all household members and measured from the latest completion, including across midnight. The daily household cap still applies. Scan retries return the same completion without awarding points again, and optional details do not start another cooldown. Single-completion daily chores use the daily cap alone. Existing repeatable chores default to Automatic.
 
@@ -247,7 +247,7 @@ Backend: `supabase/household-tutorial.sql`; rollback checks: `supabase/verify-ho
 Invitation auto-join: apply `supabase/automatic-household-invitations.sql` after the household admin schema. `supabase/verify-automatic-household-invitations.sql` checks immediate membership, regular member role, idempotency, invite rotation, authentication, and the household capacity limit in a rolled-back transaction.
 
 
-Chore repeat limits: daily, weekly and monthly schedules each allow 1–100 completions per household per period. Weeks reset Monday; months reset on the first in the household time zone. Assignment and trait point adjustments are under the collapsed **Additional Settings** section. Configured, non-deleted chores are always active; deletion preserves history. Apply `supabase/repeating-chore-limits.sql` after the existing chore schedule/reward schema; verify with `supabase/verify-repeating-chore-limits.sql`. The existing `daily_limit` API field holds the selected period’s limit for compatibility. Cooldowns remain daily-only.
+Chore repeat limits: daily, weekly and monthly schedules each allow 1–100 completions per household per period. Weeks reset Monday; months reset on the first in the household time zone. Assignment and trait point adjustments are under the collapsed **Additional Settings** section. Configured, non-deleted chores are always active; deletion preserves history. Apply `supabase/repeating-chore-limits.sql` after the existing chore schedule/reward schema; verify with `supabase/verify-repeating-chore-limits.sql`. The existing `daily_limit` API field holds the selected period’s limit for compatibility. Cooldowns apply to every repeat frequency.
 
 
 Sticker management: configured stickers offer only **Assign sticker to another chore** and **Release this sticker**; their URL is hidden. Reassignment stays in the household, rejects destinations with a sticker, and preserves both chores’ histories/configuration. Cards show **No sticker assigned** and **Assign sticker** only for chores without a sticker. The single **Assigned to** control under Additional Settings offers anyone, a household member, or an enabled team; choosing a person clears team restrictions, choosing a team clears person restrictions, and choosing anyone clears both. Existing multi-person/intersection restrictions remain unchanged until explicitly replaced. Person assignments appear in daily/weekly/monthly assigned-work tiles even with teams off. Backend reference: `supabase/sticker-reassignment.sql`; transactional verification: `supabase/verify-sticker-reassignment.sql`.
@@ -276,3 +276,9 @@ Applied source order: cat-names-and-carryover.sql, named-cat-dashboard.sql, save
 
 
 Dashboard period tiles prefer unfinished chores assigned to the current member/team. When none remain in a period, that tile and its drilldown show eligible chores assigned to anyone in the household for that same daily, weekly or monthly period. Exhausted and restricted chores remain excluded.
+
+
+Chore cards offer **Do chore** to log without an NFC sticker. Manual and NFC paths share one server-side completion function enforcing membership, assignment, schedule limits, cooldowns, points, snapshots and notifications. Manual requests retain their idempotency key across interrupted responses until success. The confirmation offers the same optional details/photo-proof form. Admin-only card deletion is a compact text action with its existing confirmation. Backend reference: supabase/manual-chore-completion.sql; rollback verification: supabase/verify-manual-chore-completion.sql.
+
+
+All-frequency cooldowns are applied in supabase/all-frequency-cooldowns.sql after the shared manual/NFC completion migration. Both completion paths share the wait, including across period resets. Server verification: supabase/verify-all-frequency-cooldowns.sql.
