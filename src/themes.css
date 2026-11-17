@@ -31,3 +31,5 @@
 
 .managed-team>.managed-team-actions{display:flex;flex:0 0 auto;align-items:center;gap:16px}.team-delete-warning{padding-left:22px;margin:18px 0 24px;font-size:13px;line-height:1.8}.team-delete-warning li+li{margin-top:10px}.button.danger-action{background:#9a3737!important;border-color:#9a3737!important;color:#fff!important}@media(max-width:650px){.managed-team-actions{gap:12px!important}.team-delete-warning{font-size:12px}}
 .managed-team-actions .team-delete-link{color:var(--quiet,#a49373);font-size:11px;font-weight:400;min-height:44px;padding:8px 4px;background:none;border:0}.managed-team-actions .team-delete-link:hover:not(:disabled),.managed-team-actions .team-delete-link:focus-visible{color:#b94444;text-decoration:underline}
+.reward-system-settings{margin:24px 0;padding:22px 0;border-top:1px solid var(--line,#ddd)}.reward-system-settings>h3{font-size:18px;margin-bottom:12px}.reward-system-settings .cat-target-settings{margin:0;padding:0;border:0}
+.theme-light .theme-choice.preview-poker strong,.theme-light .theme-choice.preview-poker .theme-emoji{color:#ffe0a1}

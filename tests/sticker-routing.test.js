@@ -3,16 +3,18 @@ import assert from 'node:assert/strict'
 import { scanAction } from '../src/stickers/routing.js'
 import { STARTER_CHORES } from '../src/stickers/starter-chores.js'
 
-test('public and browser scans do not automatically award chores',()=>{
+test('signed-in household members log immediately in browsers and installed apps; guests do not',()=>{
  const own={status:'assigned',member:true,admin:true}
  assert.equal(scanAction(own,{signedIn:false,installed:true}),'public')
- assert.equal(scanAction(own,{signedIn:true,installed:false}),'member-preview')
+ assert.equal(scanAction(own,{signedIn:true,installed:false}),'complete')
  assert.equal(scanAction(own,{signedIn:true,installed:true}),'complete')
  assert.equal(scanAction(own,{signedIn:true,installed:true,configuring:true}),'configure')
 })
 test('new issued tags require an admin; foreign ownership never becomes completion',()=>{
- assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:true}),'claim')
+ assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:true,configuring:true}),'claim')
  assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:false}),'unassigned')
+ assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:true}),'unassigned')
+ assert.equal(scanAction({status:'assigned',member:true,admin:false},{signedIn:true,configuring:true}),'complete')
  assert.equal(scanAction({status:'preparing'},{signedIn:true,canClaim:true}),'preparing')
  assert.equal(scanAction({status:'assigned',member:false},{signedIn:true,installed:true}),'foreign')
  assert.equal(scanAction({status:'invalid'},{signedIn:true,installed:true}),'invalid')

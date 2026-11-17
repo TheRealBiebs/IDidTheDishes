@@ -3,3 +3,4 @@
 .weekly-cat-awards{display:flex;justify-content:center;flex-wrap:wrap;gap:5px;padding:20px}.weekly-cat-awards>.companion-cat{width:150px;max-width:100%;animation:trophy-arrive 1s ease both}
 
 .cat-name-form{display:flex;align-items:end;gap:12px;margin:12px 0}.cat-name-form label{flex:1;margin:0}.cat-name-form .button{flex-shrink:0;margin-bottom:0}@media(max-width:420px){.cat-name-form{flex-direction:column;align-items:stretch}}
+.cat-care-actions small{white-space:normal;overflow-wrap:anywhere;line-height:1.5}.cat-lounge-night .cat-window span{color:#f2dca8}.cat-target-settings select{max-width:100%}.cat-target-settings form{display:grid;gap:14px}

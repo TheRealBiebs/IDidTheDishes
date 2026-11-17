@@ -1,0 +1,6 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {slotMultiplier,blackjackTotal,cardInfo,pendingCasinoKey} from '../src/rewards/casino/rules.js'
+test('slots paytable covers every three-reel outcome with exact whole-chip returns',()=>{let sum=0;for(let a=0;a<6;a++)for(let b=0;b<6;b++)for(let c=0;c<6;c++){const m=slotMultiplier([a,b,c]);assert.ok(Number.isInteger(m)&&m>=0);sum+=m}assert.equal(sum,208);assert.equal(slotMultiplier([5,5,5]),40);assert.equal(slotMultiplier([0,0,0]),5);assert.equal(slotMultiplier([0,0,1]),2);assert.equal(slotMultiplier([0,1,2]),1);assert.equal(slotMultiplier([1,2,3]),0)})
+test('blackjack cards use aces flexibly and preserve rank/suit without revealing hidden cards',()=>{assert.equal(blackjackTotal([0,9]),21);assert.equal(blackjackTotal([0,13,9]),12);assert.equal(blackjackTotal([0,13,26,7]),21);assert.equal(blackjackTotal([9,22,2]),23);assert.deepEqual(cardInfo(0),{rank:'A',suit:'♠',red:false});assert.deepEqual(cardInfo(25),{rank:'K',suit:'♥',red:true});assert.equal(new Set(Array.from({length:52},(_,i)=>JSON.stringify(cardInfo(i)))).size,52)})
+test('recovery is scoped by account and household',()=>{assert.notEqual(pendingCasinoKey('home-one','andrew'),pendingCasinoKey('home-two','andrew'));assert.notEqual(pendingCasinoKey('home-one','andrew'),pendingCasinoKey('home-one','mia'))})

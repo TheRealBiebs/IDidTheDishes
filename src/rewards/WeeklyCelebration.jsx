@@ -5,7 +5,7 @@ import { rpc } from '../api'
 import { weekLabel,weeklyWinners,weeklyWinnerLabel,weeklyUnit } from './weekly-results'
 import './weekly-results.css'
 
-export default function WeeklyCelebration({household,enabled,renderDialog,onInspect,onRoulette}){
+export default function WeeklyCelebration({household,enabled,renderDialog,onInspect,onCasino}){
   const [result,setResult]=useState(null),[error,setError]=useState(''),[saving,setSaving]=useState(false)
   const [foreground,setForeground]=useState(!document.hidden)
   const showing=useRef(null),seen=useRef(new Set()),acknowledging=useRef(null),client=useRef(crypto.randomUUID())
@@ -21,10 +21,10 @@ export default function WeeklyCelebration({household,enabled,renderDialog,onInsp
     return acknowledging.current
   }
   useEffect(()=>{if(!enabled||!foreground||!result)return;const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;const timer=setTimeout(()=>acknowledge(),reduced?0:2600);return()=>clearTimeout(timer)},[enabled,foreground,result?.id])
-  async function dismiss(inspect=false){if(!await acknowledge())return;const value=result;showing.current=null;setResult(null);if(inspect==='roulette')onRoulette?.(value);else if(inspect)onInspect(value)}
+  async function dismiss(inspect=false){if(!await acknowledge())return;const value=result;showing.current=null;setResult(null);if(inspect==='casino')onCasino?.(value);else if(inspect)onInspect(value)}
   if(!enabled||!foreground||!result)return null
   const winners=weeklyWinners(result)
-  return renderDialog({title:'Weekly result',onClose:()=>dismiss(),children:<div className="weekly-celebration"><WeekAnimation result={result}/><h3>{weeklyWinnerLabel(result)}</h3><p>{weekLabel(result.week_start,result.week_end)}</p><p>{result.reward_scheme==='cats'?(winners.length?'A cat trophy for every qualifying companion.':'No cat met its required days this week.'):(winners.length?winners.length===1?'+1 weekly win point':'+1 weekly win point for each tied participant':'No weekly win point awarded.')}</p><div className="weekly-score-list">{result.team_scores.filter(t=>t.winner).map(t=><div key={t.team_id}><span>{t.name}</span><strong>{t.score} {weeklyUnit(result.reward_scheme,result.team_scores)}</strong></div>)}</div>{error&&<p role="alert" className="form-error">{error}</p>}<div className="form-actions">{result.reward_scheme==='poker'&&onRoulette&&<button className="button" disabled={saving} onClick={()=>dismiss('roulette')}>Play weekly roulette</button>}<button className="button secondary" disabled={saving} onClick={()=>dismiss(true)}>View this week</button><button className="button" disabled={saving} onClick={()=>dismiss()}>Continue</button></div></div>})
+  return renderDialog({title:'Weekly result',onClose:()=>dismiss(),children:<div className="weekly-celebration"><WeekAnimation result={result}/><h3>{weeklyWinnerLabel(result)}</h3><p>{weekLabel(result.week_start,result.week_end)}</p><p>{result.reward_scheme==='cats'?(winners.length?'A cat trophy for every qualifying companion.':'No cat met its required days this week.'):(winners.length?winners.length===1?'+1 weekly win point':'+1 weekly win point for each tied participant':'No weekly win point awarded.')}</p><div className="weekly-score-list">{result.team_scores.filter(t=>t.winner).map(t=><div key={t.team_id}><span>{t.name}</span><strong>{t.score} {weeklyUnit(result.reward_scheme,result.team_scores)}</strong></div>)}</div>{error&&<p role="alert" className="form-error">{error}</p>}<div className="form-actions">{result.reward_scheme==='poker'&&onCasino&&<button className="button" disabled={saving} onClick={()=>dismiss('casino')}>Visit the casino</button>}<button className="button secondary" disabled={saving} onClick={()=>dismiss(true)}>View this week</button><button className="button" disabled={saving} onClick={()=>dismiss()}>Continue</button></div></div>})
 }
 function WeekAnimation({result}){
   const winners=weeklyWinners(result)
