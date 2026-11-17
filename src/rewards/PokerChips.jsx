@@ -1,3 +1,5 @@
+import ChipStackArt from './ChipStackArt'
+import {chipPileParts} from './trophy-layout'
 import {useEffect,useRef,useState} from 'react'
 import {POKER_CHIPS,pokerChips,pokerChipLabel} from './poker-chips'
 import './poker.css'
@@ -13,8 +15,9 @@ export function PokerChipStacks({points=0,animate=false,maxVisible=20}){
   })}</div>
 }
 export function PokerChipPile({points=0}){
- const chips=pokerChips(points).filter(c=>c.count)
- return <div className="poker-natural-pile" role="img" aria-label={pokerChipLabel(points)} data-points={points}>{chips.map((chip,j)=><div className="poker-natural-stack" key={chip.value} style={{left:`${15+(j%3)*29}%`,bottom:`${j<3?4:23}px`,zIndex:j<3?3:1}}>{Array.from({length:Math.min(chip.count,14)},(_,i)=><PokerChip key={i} chip={chip} className="poker-stacked-chip" style={{'--chip-index':i}}/>)}{chip.count>14&&<small className="poker-overflow" style={{bottom:90}}>+{chip.count-14}</small>}</div>)}</div>
+ const {parts}=chipPileParts(points,24),columns=Math.min(4,Math.max(1,parts.length)),rows=Math.ceil(parts.length/columns)
+ return <div className="poker-natural-pile exact-chip-pile" role="img" aria-label={pokerChipLabel(points)} data-points={points} style={{'--pile-columns':columns}}>{parts.map((chip,i)=><div className="exact-chip-stack" key={i} style={{width:100/columns+'%',height:Math.max(10,chip.h/90*100)+'%',left:((i%columns)+(Math.floor(i/columns)===rows-1?(columns-Math.min(columns,parts.length-Math.floor(i/columns)*columns))/2:0))*100/columns+'%',bottom:Math.floor(i/columns)*12+'%',zIndex:rows-Math.floor(i/columns)}}><ChipStackArt {...chip}/></div>)}</div>
+
 }
 export function PokerChipLegend(){
   return <ul className="poker-legend" aria-label="Poker chip values">{POKER_CHIPS.map(chip=><li key={chip.value}><PokerChip chip={chip}/><span>{chip.name} · {chip.value}</span></li>)}</ul>

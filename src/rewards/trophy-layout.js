@@ -1,3 +1,4 @@
+import {pokerChips} from './poker-chips.js'
 export const TROPHY_SHELVES=[330,220,110]
 export const TROPHY_CAPACITY=15
 export const MAX_VISIBLE_TROPHIES=75
@@ -6,9 +7,13 @@ export const trophyWord=mode=>({wizard:'cup',poker:'chip stack',cats:'sleeping c
 export const cabinetStage=total=>total===0?'empty':total<=5?'starting':total<=15?'filling':total<=30?'crowded':'overstuffed'
 export function chipPileParts(total,limit=75){
  if(!Number.isSafeInteger(total)||total<0)throw new RangeError('Choose an exact nonnegative chip total.')
- // Fixed visual units make a growing bank grow monotonically, including at denomination boundaries.
- const chips=Math.ceil(total/25),stacks=Math.ceil(chips/20)
- return {stacks,hidden:Math.max(0,stacks-limit),parts:Array.from({length:Math.min(stacks,limit)},(_,i)=>({part:i,layers:Math.min(20,chips-i*20),w:25,h:8+Math.min(20,chips-i*20)*.8}))}
+ const denominations=pokerChips(total).filter(c=>c.count),count=denominations.reduce((n,c)=>n+c.count,0)
+ // Reserve space for denomination remainders, then bound stacks without rounding
+ // or dropping a single chip. Very large banks have denser, taller stacks.
+ const perStack=Math.max(20,Math.ceil(count/Math.max(1,limit-denominations.length))),parts=[]
+ for(const chip of denominations)for(let remaining=chip.count;remaining>0;remaining-=perStack){const layers=Math.min(perStack,remaining);parts.push({part:parts.length,layers,value:chip.value,color:chip.color,ink:chip.ink,w:30,h:Math.min(90,8+layers*2.4)})}
+ return {stacks:parts.length,hidden:0,parts}
+
 }
 function validateLimit(n){if(!Number.isInteger(n)||n<15||n>75)throw new RangeError('Choose a bounded trophy display size.')}
 function supportedPosition(item,placed){
@@ -17,6 +22,8 @@ function supportedPosition(item,placed){
   let y=102
   for(const p of placed)if(Math.abs(x-p.x)<(item.w+p.w)/2+1)y=Math.min(y,p.localY-p.h)
   if(y-item.h<8)continue
+  // A stack's center of mass must lie over a supporting object's top.
+  if(y<102&&!placed.some(p=>Math.abs(y-(p.localY-p.h))<.001&&Math.abs(x-p.x)<=p.w/2-1))continue
   if(!best||y>best.localY+.001||Math.abs(y-best.localY)<.001&&Math.abs(x-150)<Math.abs(best.x-150))best={x,localY:y}
  }
  return best
@@ -31,7 +38,7 @@ export function cabinetLayout(trophies,{maxVisible=75}={}){
  const items=[];let shelf=-1
  for(const [group,parts] of Object.entries(groups)){
   if(!parts.length)continue;shelf++;let placed=[]
-  for(const item of parts){if(items.length>=maxVisible)break;let position=supportedPosition(item,placed);if(!position){shelf++;placed=[];position=supportedPosition(item,placed)}const p={...item,...position,shelf,angle:0};placed.push(p);items.push(p)}
+  for(const item of parts){if(items.filter(i=>i.group!=='poker').length>=maxVisible&&group!=='poker')break;let position=supportedPosition(item,placed);if(!position){shelf++;placed=[];position=supportedPosition(item,placed)}const p={...item,...position,shelf,angle:0};placed.push(p);items.push(p)}
  }
  const shelves=Math.max(3,shelf+1),height=shelves*110+10
  return {total:trophies.length,stage:cabinetStage(trophies.length),hidden:Math.max(0,intended-items.length),shelves: Array.from({length:shelves},(_,i)=>(shelves-i)*110),height,width:300,items:items.map(p=>({...p,id:p.index,y:(shelves-1-p.shelf)*110+p.localY+8}))}

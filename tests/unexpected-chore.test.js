@@ -16,3 +16,7 @@ test('pending submissions are scoped by account and household and restore the sa
   assert.deepEqual(readUnexpectedRequest({getItem:()=>JSON.stringify(pending)},'key'),pending)
   assert.equal(readUnexpectedRequest({getItem:()=>'{broken'},'key'),null)
 })
+
+import {wheelSettings,wheelRotation,randomChoresAvailable} from '../src/rewards/wheel-settings.js'
+test('configurable wheel outcomes including duplicate values stop at the selected index',()=>{for(const n of [4,17])for(let index=0;index<n;index++)assert.ok(Math.abs(((wheelRotation(index,n)+index*360/n)%360))<.000001);for(const pair of [[-1,4],[4,4],[1,1],[1,21]])assert.throws(()=>wheelRotation(...pair));assert.deepEqual(wheelSettings({}).standard.values,[0,1,2,3]);assert.equal(wheelSettings({}).low.enabled,false);assert.deepEqual(wheelSettings({unexpected_wheels:{high:{enabled:true,values:[4,4,8,12]}}}).high.values,[4,4,8,12])})
+test('random chores disappear only for specific-chore cat care and saved requests retain effort',()=>{assert.equal(randomChoresAvailable({reward_scheme:'cats',cat_care_mode:'chores'}),false);for(const reward_scheme of ['points','cats','stars','poker'])assert.equal(randomChoresAvailable({reward_scheme,cat_care_mode:'points'}),true);const pending={requestId:'00000000-0000-4000-8000-000000000001',description:'Unexpected job',wheel:'high'};assert.deepEqual(readUnexpectedRequest({getItem:()=>JSON.stringify(pending)},'x'),pending);assert.equal(readUnexpectedRequest({getItem:()=>JSON.stringify({...pending,wheel:'forged'})},'x'),null)})

@@ -10,6 +10,6 @@ export function rouletteRotation(points){
 }
 export const unexpectedRequestKey=(household,user)=>`dishes-unexpected:${user}:${household}`
 export function readUnexpectedRequest(storage,key){
-  try{const value=JSON.parse(storage.getItem(key));if(value&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value.requestId)&&cleanUnexpectedDescription(value.description)===value.description)return value}catch{}
+  try{const value=JSON.parse(storage.getItem(key));if(value&&(value.wheel===undefined||['standard','low','high'].includes(value.wheel))&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value.requestId)&&cleanUnexpectedDescription(value.description)===value.description)return value}catch{}
   return null
 }

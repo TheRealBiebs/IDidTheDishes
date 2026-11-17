@@ -1,3 +1,4 @@
+import ChipStackArt from './ChipStackArt'
 import TrophyCaseControls from './TrophyCaseControls'
 import {catType} from './cats/catalog'
 import CatArt from './cats/CatArt'
@@ -20,7 +21,7 @@ export default function TrophyCase({name,wins=0,mode='points',color,trophies,app
  const banked=display.filter(t=>t.kind==='poker_bank').reduce((n,t)=>n+Number(t.bank_total),0),unplaced=display.filter(t=>t.kind==='glass_sticker'&&t.can_place&&!t.placement)
  const scene=<div className="trophy-case-interior" style={{aspectRatio:`300 / ${layout.height}`}}>
   {layout.shelves.map((top,i)=><span className="trophy-shelf" key={i} style={{top:top/layout.height*100+'%'}} aria-hidden="true"/>)}
-  {layout.items.map(item=>{const t=display[item.index];return <button type="button" key={item.key} className={'trophy-item trophy-supported trophy-group-'+item.group} aria-label={'View '+trophyTitle(t)} title={trophySummary(t)} onFocus={()=>setSelected(t.id)} onClick={()=>setSelected(t.id)} data-earned-mode={trophyKind(t.mode)} data-reward-id={t.id} data-shelf={item.shelf} style={{left:item.x/3+'%',top:item.y/layout.height*100+'%',width:item.w/3+'%',height:item.h/layout.height*100+'%',transform:'translate(-50%,-100%)',zIndex:100+Math.round(item.y)}}>{t.kind==='poker_bank'?<ChipStackArt layers={item.layers} part={item.part}/>:<TrophyArt kind={trophyKind(t.mode)} palette={palette} appearance={t}/>}</button>})}
+  {layout.items.map(item=>{const t=display[item.index];return <button type="button" key={item.key} className={'trophy-item trophy-supported trophy-group-'+item.group} aria-label={'View '+trophyTitle(t)} title={trophySummary(t)} onFocus={()=>setSelected(t.id)} onClick={()=>setSelected(t.id)} data-earned-mode={trophyKind(t.mode)} data-reward-id={t.id} data-shelf={item.shelf} style={{left:item.x/3+'%',top:item.y/layout.height*100+'%',width:item.w/3+'%',height:item.h/layout.height*100+'%',transform:'translate(-50%,-100%)',zIndex:100+Math.round(item.y)}}>{t.kind==='poker_bank'?<ChipStackArt layers={item.layers} value={item.value} color={item.color} ink={item.ink}/>:<TrophyArt kind={trophyKind(t.mode)} palette={palette} appearance={t}/>}</button>})}
   {!display.length&&<span className="trophy-case-empty">No trophies to display yet</span>}
   <div className="trophy-glass" aria-hidden="true"/>
   <div className="case-glass-stickers">{display.filter(t=>t.kind==='glass_sticker'&&t.placement).map(t=><button type="button" key={t.id} className="placed-glass-sticker" style={{left:t.placement.x+'%',top:t.placement.y+'%',transform:`translate(-50%,-50%) rotate(${t.placement.angle}deg)`}} onFocus={()=>setSelected(t.id)} onClick={()=>setSelected(t.id)} title={trophySummary(t)} aria-label={'View '+trophyTitle(t)}><StickerArt design={t.design}/></button>)}</div>
@@ -44,10 +45,6 @@ export function TrophyCaseGrid({entries=[],mode='points',compact=false,household
 }
 function trophyTitle(item){if(item.kind==='poker_bank')return (item.name?item.name+'’s ':'')+'banked chips';if(item.kind==='glass_sticker')return glassSticker(item.design)[1]+' sticker';return item.cat_name||(trophyKind(item.mode)==='cats'?catType(item.cat_type)[0]+' cat':'House Cup')}
 function trophySummary(item){if(item.kind==='poker_bank')return Number(item.bank_total).toLocaleString()+' chips permanently banked · Last deposit '+item.won_on;if(item.kind==='glass_sticker')return [item.won_on?'Won '+item.won_on:'',item.week_start?'Week of '+item.week_start:'','Stickers on all 7 days',item.chores!=null?item.chores+' chores':''].filter(Boolean).join(' · ');return [item.won_on?'Won '+item.won_on:'Award date unavailable',item.week_start?'Week of '+item.week_start:'',item.points!=null?item.points+' points':'',item.chores!=null?item.chores+' chores':'',item.personal_points!=null?'Your points: '+item.personal_points:'',item.satisfied_days!=null?item.satisfied_days+' satisfied days':''].filter(Boolean).join(' · ')}
-function ChipStackArt({layers=1,part=0}){
- const colors=['#f3eee0','#c64d5c','#418cd1','#309d73','#272c3c'],height=8+layers*.8,color=colors[part%5]
- return <svg viewBox={`0 0 25 ${height}`} className="trophy-art trophy-art-chip-stack" aria-hidden="true">{Array.from({length:layers},(_,i)=>{const y=height-4-i*.8;return <g key={i}><path d={`M1.5 ${y}v1.4c0 4 22 4 22 0v-1.4Z`} fill={color} stroke="#10141b" strokeWidth=".3"/><ellipse cx="12.5" cy={y} rx="11" ry="3" fill={color} stroke="#fff1da" strokeWidth="1" strokeDasharray="2.7 2"/></g>})}</svg>
-}
 function TrophyArt({kind,palette,appearance={}}){
  if(kind==='cats')return <CatArt type={appearance.cat_type??0} sleeping small/>
  const gold=`url(#${palette}-gold)`,fur=`url(#${palette}-cat)`
