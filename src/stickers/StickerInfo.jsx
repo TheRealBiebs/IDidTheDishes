@@ -1,9 +1,17 @@
-import { frequencyLabel } from './schedule'
-import { completionReward } from '../rewards/registry'
-import { issuedStickerUrl } from './provisioning'
+import {useState} from 'react'
 
-export default function StickerInfo({tag,binding,reward,onAssign,onRelease,onMessage}){
-  return <><div className="sticker-preview"><strong>{tag.chore}</strong><span>{completionReward(reward,tag.points)} · {tag.daily_limit} per {frequencyLabel(tag)}</span></div>{binding?<><p>A preloaded sticker is assigned to this chore{binding.locked?' and its URL is permanently locked':''}. You can change the chore settings without rewriting the sticker.</p><label>Sticker link<textarea readOnly rows={3} value={issuedStickerUrl(binding.token)} onFocus={e=>e.target.select()}/></label><button className="button secondary full" onClick={()=>navigator.clipboard.writeText(issuedStickerUrl(binding.token)).then(()=>onMessage('Sticker link copied.')).catch(()=>onMessage('Select and copy the sticker link above.',true))}>Copy sticker link</button><button className="text-button" onClick={onRelease}>Release this sticker</button><p className="muted">Releasing keeps your chore and its history, and lets another household claim the same physical sticker.</p></>:<><p>This chore does not have a sticker yet. Scan a preloaded, unassigned sticker to claim it for this chore. No writing is needed.</p><button className="button full" onClick={onAssign}>Scan a sticker to assign</button></>}</>
+export default function StickerInfo({tag,binding,tags=[],bindings=[],busy,onAssign,onRelease,onReassign}){
+ const [target,setTarget]=useState('')
+ const choices=tags.filter(chore=>chore.id!==tag.id&&!bindings.some(link=>link.chore_tag_id===chore.id))
+ return binding?<>
+  <form onSubmit={e=>{e.preventDefault();onReassign(target)}}>
+   <label>Assign sticker to another chore<select aria-label="Assign sticker to another chore" value={target} disabled={busy} onChange={e=>setTarget(e.target.value)} required><option value="">Choose a chore</option>{choices.map(chore=><option key={chore.id} value={chore.id}>{chore.chore}</option>)}</select></label>
+   {!choices.length&&<p>No other chores need a sticker. Add a chore first, or release another chore’s sticker.</p>}
+   <button className="button full" disabled={busy||!target}>Assign to this chore</button>
+  </form>
+  <button className="text-button" disabled={busy} onClick={onRelease}>Release this sticker</button>
+  <p className="muted">Releasing lets another household claim the sticker. Chore history is preserved.</p>
+ </>:<><p>No sticker assigned. Scan a prepared sticker to assign it to this chore.</p><button className="button full" disabled={busy} onClick={onAssign}>Scan a sticker to assign</button></>
 }
 export function StickerReleaseRequests({requests,busy,onReview}){
   if(!requests.length)return null

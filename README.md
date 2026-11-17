@@ -12,7 +12,7 @@ Each completion snapshots its base reward and adjustment rules when logged. Chan
 
 Household admins: see [HOUSEHOLD-ADMINS.md](HOUSEHOLD-ADMINS.md) for co-admins, transfers, and membership approval.
 
-Household creation has one theme selector: Wizard Adventure with gemstones, Parents & Kids with the star calendar, Cat companions (growth/breeding coming later), or Poker Chips with exact-value chip stacks (games coming later). Teams default off, so individuals gather points; admins can enable teams during creation or in Household settings. Starter chores remain selectable during creation.
+Household creation has one theme selector: Wizard Adventure with gemstones, Parents & Kids with the star calendar, Cat companions with daily care and weekly collectible cats, or Poker Chips with exact-value chip stacks (games coming later). Teams default off, so individuals gather points; admins can enable teams during creation or in Household settings. Starter chores remain selectable during creation.
 
 Admins can also choose **Your household → Delete household** and type its exact name to confirm. This permanently removes the household's shared chores, teams, history, invitations, and notifications for all members. Accounts and other households remain. Its preloaded stickers become unassigned and reusable, including permanently locked stickers. The applied backend addition is documented in `supabase/household-lifecycle.sql`.
 
@@ -40,7 +40,7 @@ The production output is `dist/`. GitHub Actions uses `npm ci` and deploys every
 
 ## Household themes and teams
 
-Open **Your household → Household settings** as an admin. A single theme sets both appearance and rewards. Wizard Adventure uses gemstones, Parents & Kids uses the calendar, Poker Chips uses exact-value stacks on a felt table, and cats remains a preview with chore points for now. The old Squeaky Clean theme migrates to Poker Chips. New households start in individual mode with no teams; choosing teams during creation adds four starter teams. Existing households retain their teams mode until an admin changes it.
+Open **Your household → Household settings** as an admin. A single theme sets both appearance and rewards. Wizard Adventure uses gemstones, Parents & Kids uses the calendar, Poker Chips uses exact-value stacks on a felt table, and Cat companions uses individual daily care targets and collectible weekly cats. The old Squeaky Clean theme migrates to Poker Chips. New households start in individual mode with no teams; choosing teams during creation adds four starter teams. Existing households retain their teams mode until an admin changes it.
 
 Teams are optional in every theme. When enabled, admins can add and rename teams, choose reward colours and emblems, and assign members. Members can choose their team. Turning teams off keeps memberships and saved team assignments, but team assignments do not restrict chore eligibility until teams are enabled again. Up to 20 teams are supported.
 
@@ -245,3 +245,20 @@ Backend: `supabase/household-tutorial.sql`; rollback checks: `supabase/verify-ho
 
 
 Invitation auto-join: apply `supabase/automatic-household-invitations.sql` after the household admin schema. `supabase/verify-automatic-household-invitations.sql` checks immediate membership, regular member role, idempotency, invite rotation, authentication, and the household capacity limit in a rolled-back transaction.
+
+
+Chore repeat limits: daily, weekly and monthly schedules each allow 1–100 completions per household per period. Weeks reset Monday; months reset on the first in the household time zone. Assignment and trait point adjustments are under the collapsed **Additional Settings** section. Configured, non-deleted chores are always active; deletion preserves history. Apply `supabase/repeating-chore-limits.sql` after the existing chore schedule/reward schema; verify with `supabase/verify-repeating-chore-limits.sql`. The existing `daily_limit` API field holds the selected period’s limit for compatibility. Cooldowns remain daily-only.
+
+
+Sticker management: configured stickers offer only **Assign sticker to another chore** and **Release this sticker**; their URL is hidden. Reassignment stays in the household, rejects destinations with a sticker, and preserves both chores’ histories/configuration. Cards show **No sticker assigned** and **Assign sticker** only for chores without a sticker. The single **Assigned to** control under Additional Settings offers anyone, a household member, or an enabled team; choosing a person clears team restrictions, choosing a team clears person restrictions, and choosing anyone clears both. Existing multi-person/intersection restrictions remain unchanged until explicitly replaced. Person assignments appear in daily/weekly/monthly assigned-work tiles even with teams off. Backend reference: `supabase/sticker-reassignment.sql`; transactional verification: `supabase/verify-sticker-reassignment.sql`.
+
+
+## Cat companions and permanent trophy appearances
+
+Each member has a random, persistent cat for the Monday-based week, selected from 28 original SVG appearances (including Siamese, Sphynx, calico, tabbies, long-haired cats and more). The overview shows their own cat, household companions, daily points, care actions and seven satisfaction marks. At 25% of the personal daily target, Feed unlocks; Play at 50%; Cuddle at 75%. At 100% or more the cat sleeps until the next household-local day. Actions are optional and persisted per user/day; only server-counted chore points determine satisfaction. Care never creates points. The same 20-point default applies per member even when teams are enabled.
+
+Household admins edit **Cat care target** under Household settings (1–10000). Changes apply immediately to today and future days; earlier days retain their targets. Seven satisfied days in a full eligible week awards that exact cat, separately to every qualifying person, at the weekly reset. Joining or enabling cats midweek starts a partial adoption week; the first possible full-week trophy starts Monday. Chore scanning participates without requiring an overview visit. A new week assigns a new cat. Breeding is not included.
+
+Trophy cases use per-award snapshots: reward mode, saved emblem and color, and cat variant where applicable. Changing themes, team icons or colors does not repaint earned trophies. Mixed cabinets show all earned types together, with wizard cups displaying the saved winning emblem. The overview, Hall of Fame and opted-in community use these snapshots. Community payloads expose aggregate trophies/appearance and permitted household/team names; cat daily targets, actions, member identities and per-person progress remain private.
+
+Applied source order: supabase/cat-companions.sql, earned-trophy-appearance.sql, cat-weekly-settlement.sql, community-earned-trophies.sql, cat-progress-integration.sql, cat-award-integrity.sql. These are references for the already-updated project, not scripts to rerun. Transactional verification is in supabase/verify-cat-companions.sql.

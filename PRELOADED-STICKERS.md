@@ -57,3 +57,5 @@ Applied SQL sources: `supabase/sessionless-sticker-writing.sql` (sessionless res
 Verification covered rolled-back database fixtures for roles, public privacy, atomic claims, cross-household isolation, release/reclaim, history, and daily limits; 15 unit tests; a production frontend build; and browser fixtures for public/member/admin flows and simulated Android write/verify/lock receipts. Java changes have not been compiled or tested against real NFC hardware. Physical readback, retap, permanent locking, and Android deep-link behavior still need a device test after the next requested APK build.
 
 Sessionless verification: `supabase/verify-sessionless-sticker-writing.sql` checks platform authorization, idempotent reservations without session rows, verified/locked availability, and recovery of old pending stickers.
+
+To move a configured sticker within a household, choose **Manage sticker**, select another chore that has no sticker, and press **Assign to this chore**. No release or rewrite is needed. Only household admins can move it. Release remains the way to make it available to a different household. Both chores keep their recorded completions and settings.

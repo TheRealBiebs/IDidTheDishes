@@ -2,7 +2,7 @@
 export const REWARD_SCHEMES = {
   points: { id: 'points', name: 'Gemstone points', icon: '◆', status: 'Ready', description: 'Earn chore points and fill your team’s colourful gemstone tubes.', rule: 'Each chore has its own point value. Team tubes show the current week.', unit: 'pts' },
   stars: { id: 'stars', name: 'Gold-star calendar', icon: '★', status: 'Ready', description: 'A gold star for every completed chore, collected on a monthly calendar.', rule: 'One completion = one star, regardless of the chore’s point value. All logged chores appear on their original dates.', unit: 'stars' },
-  cats: {id:'cats',name:'Cat companions',icon:'🐾',status:'Preview',description:'Cat growth and breeding are coming later. Chores earn points for now.',rule:'Earn chore points. Cat raising is not active yet.',unit:'pts'},
+  cats: {id:'cats',name:'Cat companions',icon:'🐾',status:'Ready',description:'Care for your own weekly cat with daily chore points.',rule:'Feed at 25%, play at 50%, cuddle at 75%, sleep at 100%. Seven satisfied days earns your cat as a trophy.',unit:'pts'},
   poker: {id:'poker',name:'Poker chips',icon:'♠',status:'Ready',description:'Earn exact-value chip stacks on your household poker table.',rule:'White 1, red 5, blue 10, green 25, black 100. Poker games and betting are coming later.',unit:'pts'},
   adventure: { id: 'adventure', name: 'Household adventurers', icon: '⚔', status: 'Preview', description: 'A place for chore loot, character equipment, and friendly household battles.', rule: 'Preview only: chores are logged, but loot drops, equipment ownership, and real battles are not active yet.', unit: 'chores' },
 }

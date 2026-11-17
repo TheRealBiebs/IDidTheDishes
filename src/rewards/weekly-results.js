@@ -1,5 +1,5 @@
 export const weeklyWinners=result=>(result?.team_scores||[]).filter(team=>team.winner===true&&Number(team.score)>0)
-export const weeklyUnit=scheme=>scheme==='stars'?'stars':scheme==='adventure'?'chores':'points'
+export const weeklyUnit=(scheme,scores)=>scheme==='cats'?(scores&&scores.every(s=>s.cat_type==null)?'points':'satisfied days'):scheme==='stars'?'stars':scheme==='adventure'?'chores':'points'
 export function weekLabel(start,end){
   const first=new Date(`${start}T12:00:00Z`),last=new Date(`${end}T12:00:00Z`);last.setUTCDate(last.getUTCDate()-1)
   const fmt=new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'})

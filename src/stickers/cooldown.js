@@ -4,6 +4,7 @@ export function automaticCooldown(dailyLimit) {
 }
 
 export function cooldownMinutes(tag) {
+  if (tag.frequency && tag.frequency !== 'daily') return 0
   return tag.daily_limit > 1 ? (tag.cooldown_minutes ?? automaticCooldown(tag.daily_limit)) : 0
 }
 

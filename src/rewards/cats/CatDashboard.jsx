@@ -1,0 +1,25 @@
+import {useEffect,useRef,useState} from 'react'
+import {rpc} from '../../api'
+import CatArt from './CatArt'
+import {catType,careUnlocked} from './catalog'
+import './cats.css'
+
+export default function CatDashboard({household,currentUser,revision}){
+ const [data,setData]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[pose,setPose]=useState(''),[retry,setRetry]=useState(0)
+ const timer=useRef(null),identity=useRef('');identity.current=household.id+currentUser
+ useEffect(()=>()=>clearTimeout(timer.current),[])
+ useEffect(()=>{let active=true;const refresh=()=>rpc('cat_dashboard',{p_household:household.id}).then(value=>{if(active){setData(value);setError('')}}).catch(e=>{if(active)setError(e.message)});refresh();const interval=setInterval(refresh,60000);const visible=()=>{if(!document.hidden)refresh()};document.addEventListener('visibilitychange',visible);return()=>{active=false;clearInterval(interval);document.removeEventListener('visibilitychange',visible)}},[household.id,currentUser,revision,retry])
+ const cat=data?.cats.find(c=>c.user_id===currentUser),sleeping=cat&&cat.points>=cat.target,unlocked=cat?careUnlocked(cat.points,cat.target):[]
+ async function care(action){const key=identity.current;setBusy(true);setError('');try{const value=await rpc('care_for_cat',{p_household:household.id,p_action:action});if(key!==identity.current)return;setData(value);setPose(action);clearTimeout(timer.current);timer.current=setTimeout(()=>setPose(''),3500)}catch(e){if(key===identity.current)setError(e.message)}finally{if(key===identity.current)setBusy(false)}}
+ return <section className="panel cat-dashboard"><div className="cat-panel-heading"><h2>My cat</h2>{cat&&<span className="pill">{catType(cat.variant)[0]}</span>}</div>
+  {cat?<><div className={`cat-lounge ${sleeping?'cat-lounge-night':''}`}><div className="cat-window" aria-hidden="true"><i/><span>{sleeping?'☾':'☀'}</span></div><div className="cat-plant" aria-hidden="true">❧</div><div className="cat-cushion" aria-hidden="true"/><CatArt type={cat.variant} sleeping={sleeping} pose={sleeping?'sleep':pose} label={`${catType(cat.variant)[0]} cat, ${sleeping?'sleeping':pose||'hanging out'}`}/></div>
+   <div className="cat-daily-heading"><strong>{cat.points} / {cat.target} points today</strong><span role="status">{sleeping?'Satisfied · asleep until tomorrow':pose?({feed:'Munch munch!',play:'Playtime!',cuddle:'Prrrr…'}[pose]):'Do chores to unlock care time'}</span></div>
+   <div className="cat-progress" role="progressbar" aria-label="Daily cat satisfaction" aria-valuemin={0} aria-valuemax={cat.target} aria-valuenow={Math.min(cat.points,cat.target)}><span style={{width:`${Math.min(100,cat.points/cat.target*100)}%`}}/>{[25,50,75].map(n=><i key={n} style={{left:n+'%'}}/>)}</div>
+   <div className="cat-care-actions">{[['feed','Feed',.25],['play','Play',.5],['cuddle','Cuddle',.75]].map(([action,label,fraction],i)=><button className="button secondary" key={action} disabled={busy||sleeping||!unlocked[i]||cat.actions.includes(action)} onClick={()=>care(action)}><span>{label}{cat.actions.includes(action)?' ✓':''}</span><small>{Math.ceil(cat.target*fraction)} points · {fraction*100}%</small></button>)}</div>
+   <div className="cat-week-heading"><h3>This week</h3><strong>{cat.days.filter(d=>d.satisfied).length} / 7 satisfied days</strong></div><div className="cat-week">{cat.days.map(day=><div key={day.day} className={`${day.satisfied?'satisfied':''} ${day.day===data.day?'today':''}`} aria-label={`${day.day}: ${day.satisfied?'satisfied':!day.eligible?'before adoption':day.day>data.day?'upcoming':'not yet satisfied'}`}><span>{new Date(day.day+'T12:00:00Z').toLocaleDateString(undefined,{weekday:'short',timeZone:'UTC'})}</span><b>{day.satisfied?'♥':!day.eligible?'—':'○'}</b></div>)}</div>
+   <p className="cat-rule">Satisfy this cat all seven days to keep this exact cat as a trophy. Each household member can earn their own. Activities are optional; daily chore points earn the trophy.</p>{cat.eligible_from>data.week_start&&<p className="cat-rule">Adopted midweek. Your first full seven-day trophy week starts Monday.</p>}
+  </>:!error?<p>Finding your weekly companion…</p>:null}
+  {error&&<div role="alert"><p className="form-error">{error}</p><button className="text-button" onClick={()=>setRetry(n=>n+1)}>Retry cat progress</button></div>}
+  {data?.cats.length>1&&<div className="cat-household"><h3>Household cats</h3><div>{data.cats.filter(c=>c.user_id!==currentUser).map(c=><article key={c.id}><CatArt type={c.variant} sleeping={c.points>=c.target} label={`${c.name}’s ${catType(c.variant)[0]} cat`}/><strong>{c.name}</strong><span>{c.points} / {c.target} today</span><small>{c.days.filter(d=>d.satisfied).length} / 7 days</small></article>)}</div></div>}
+ </section>
+}
