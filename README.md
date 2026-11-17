@@ -12,7 +12,7 @@ Each completion snapshots its base reward and adjustment rules when logged. Chan
 
 Household admins: see [HOUSEHOLD-ADMINS.md](HOUSEHOLD-ADMINS.md) for co-admins, transfers, and membership approval.
 
-Household creation has one theme selector: Wizard Adventure with gemstones, Parents & Kids with the star calendar, Cat companions with daily care and weekly collectible cats, or Poker Chips with exact-value chip stacks (games coming later). Teams default off, so individuals gather points; admins can enable teams during creation or in Household settings. Starter chores remain selectable during creation.
+Household creation has one theme selector: Wizard Adventure with gemstones, Parents & Kids with the star calendar, Cat companions with daily care and weekly collectible cats, or Poker Chips with exact-value chip stacks and weekly roulette. Teams default off, so individuals gather points; admins can enable teams during creation or in Household settings. Starter chores remain selectable during creation.
 
 Admins can also choose **Your household → Delete household** and type its exact name to confirm. This permanently removes the household's shared chores, teams, history, invitations, and notifications for all members. Accounts and other households remain. Its preloaded stickers become unassigned and reusable, including permanently locked stickers. The applied backend addition is documented in `supabase/household-lifecycle.sql`.
 
@@ -215,11 +215,15 @@ Feedback is stored in an RLS-protected private table, with authenticated submiss
 
 ## Poker chips
 
-The Poker Chips theme shows a felt poker table with current-week individual or team balances and a personal chip stack in team mode. Values are fixed: white 1, red 5, blue 10, green 25, black 100. Each balance is represented with exact change, using the fewest chips; no points are rounded away. Very large stacks cap visible artwork and show the remaining chip count explicitly.
+The Poker Chips theme shows a round felt poker table, with each member’s current-week chips in neat, staggered stacks around the edge. Tables page through six seats at a time. No denomination-column labels are shown. Values are fixed: white 1, red 5, blue 10, green 25, black 100. Each balance is represented with exact change, using the fewest chips; no points are rounded away. Very large stacks cap visible artwork and show the remaining chip count explicitly.
 
-Completing a sticker chore drops the exact earned chips onto a small table. Unexpected chore roulette results also drop their awarded chips. Zero-point completions display no chips. Changing quality/condition ratings updates that completion’s stacks without another award or completion, and reduced-motion settings show the final stacks immediately. Poker games and betting are still future work. No backend migration is needed: authoritative completion points and weekly scoring remain unchanged.
+Completing a sticker chore drops the exact earned chips onto a small table. Unexpected chore roulette results also drop their awarded chips. Zero-point completions display no chips. Changing quality/condition ratings updates that completion’s stacks without another award or completion, and reduced-motion settings show the final stacks immediately. At the Monday household reset, each member with positive net earnings from a completed poker week can either bank all their chips without spinning or place bets and use exactly one American double-zero roulette spin. Only that week’s earned chips are wagerable; previously banked chips stay safe. Number, split, street, trio, corner, six-line, five-number basket, dozen, column and even-money outside bets use standard American payouts ([rules](https://www.palms.com/blog/how-to-play-roulette-rules-bets-and-the-wheel-explained)). Both zeros lose outside bets. Unbet earnings plus winning returns are banked.
 
-Implementation: `src/rewards/PokerDashboard.jsx`, `src/rewards/PokerChips.jsx`, `src/rewards/poker-chips.js`, `src/rewards/poker.css`. Tests verify exact denomination sums, mobile/desktop and team/individual displays, large balances, rewards, rating edits, and reduced motion.
+Backend: `supabase/weekly-roulette.sql` (applied). Private immutable-per-week round records snapshot archived earnings, validate whole-chip bets and inside geometry, lock settlement, draw unbiased outcomes with pgcrypto and return the saved outcome on retries. A lost response is recovered by reading the round. Test fixture `tests/weekly-roulette.sql` rolls back all data. Existing households can play the most recent completed week onward; newly created households start with their creation week. The wager/result stays available if the household later changes theme.
+
+Each member has one growing poker-bank collectible in the shared trophy case, with weekly earnings/bets/returns in its details. Subsequent settlements increase that same stack. Existing weekly winner trophies remain. Community sharing still exposes weekly-win trophies only, without private balances or betting history.
+
+Implementation: `src/rewards/roulette/`, `src/rewards/PokerDashboard.jsx`, `src/rewards/PokerChips.jsx`, `src/rewards/poker-chips.js`, `src/rewards/poker.css`. Tests verify exact denomination sums, mobile/desktop and team/individual displays, large balances, rewards, rating edits, and reduced motion.
 
 ## Weekly trophy cases
 
@@ -282,3 +286,6 @@ Chore cards offer **Do chore** to log without an NFC sticker. Manual and NFC pat
 
 
 All-frequency cooldowns are applied in supabase/all-frequency-cooldowns.sql after the shared manual/NFC completion migration. Both completion paths share the wait, including across period resets. Server verification: supabase/verify-all-frequency-cooldowns.sql.
+
+
+Wizard gemstone celebrations share the dashboard’s brass/glass tube and SVG gemstone cuts. Point awards use staggered faceted drops, tumbling/bounce and a growing pile; weekly winners have individually released gems and arcing showers, with tied-winner visuals bounded to three tubes while every winner remains in the recap list. Motion runs once, and reduced-motion mode uses static filled tubes. No audio or new dependencies. Components: src/rewards/gems/; both NFC and manual completion use the same celebration.

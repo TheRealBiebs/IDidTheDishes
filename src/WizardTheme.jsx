@@ -1,3 +1,4 @@
+import {GemFacet} from './rewards/gems/Gemstone'
 import { useState } from 'react'
 
 export const WIZARD_HOUSES = [
@@ -27,7 +28,7 @@ export function GemTube({ house, points=0, capacity=250, compact=false }) {
     const cols=compact?5:6, row=Math.floor(i/cols),col=i%cols
     const x=3+col*(91/cols)+(row%2?3:0)+((i*7)%5), y=190-row*7.7
     const turn=(i*67)%90
-    return <g key={i} transform={`translate(${x} ${y}) rotate(${turn} 7 5)`}><path d="M0 4 4 0 11 0 16 4 10 11 5 11Z" fill={h.color}/><path d="m0 4 7-1 9 1-6 7Z" fill={h.light} opacity={.25+(i%4)*.13}/><path d="M4 0 7 3 0 4m7-1 3 8 6-7M7 3l4-3" fill="none" stroke={h.light} strokeOpacity=".7" strokeWidth=".55"/></g>
+    return <g key={i} style={{'--gem-delay':`${.7+(i/count)*1.5}s`,'--release-delay':`${.2+(1-i/count)*.55+(i%3)*.015}s`,'--release-x':`${(i*13)%11-5}px`}} transform={`translate(${x} ${y}) rotate(${turn} 7 5)`}><GemFacet color={h.color} light={h.light} variant={i}/></g>
   })
   return <div className={`gem-apparatus ${compact?'compact':''}`} style={{'--gem':h.color,'--gem-light':h.light}} role="img" aria-label={`${points} ${h.name} points in a gemstone tube; scale ${capacity} points`}>
     <div className="tube-finial">✦</div><div className="tube-cap cap-top"><span/></div><div className="tube-columns"><i/><i/></div><div className="glass-tube"><div className="gem-aura" style={{height:`${proportion*100}%`}}/><svg className="tube-gems" viewBox="0 0 110 205" preserveAspectRatio="none" aria-hidden="true">{gems}</svg><div className="glass-shine"/><div className="glass-shine thin"/><div className="tube-graduations"><i/><i/><i/><i/></div></div><div className="tube-cap cap-bottom"><span/></div><div className="tube-plinth"><i/></div>
