@@ -6,7 +6,7 @@ test('star rankings and rewards count chores rather than weighted point values',
   const scores = [{ user_id: 'one', chores: 2, points: 100 }, { user_id: 'two', chores: 5, points: 5 }]
   assert.equal(rankedScores(rewardFor('points'), scores)[0].user_id, 'one')
   assert.equal(rankedScores(rewardFor('stars'), scores)[0].user_id, 'two')
-  assert.equal(completionReward(rewardFor('stars'), 999), '+1 gold star')
+  assert.equal(completionReward(rewardFor('stars'), 999), '+1 sticker')
   assert.equal(completionReward(rewardFor('adventure'), 999), 'Chore recorded')
   assert.equal(scores[0].user_id, 'one', 'sorting must not mutate the shared dashboard response')
 })

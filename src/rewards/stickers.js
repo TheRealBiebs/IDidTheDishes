@@ -1,0 +1,2 @@
+export const CALENDAR_STICKERS=[['star','⭐','Star'],['rainbow','🌈','Rainbow'],['kitty','🐱','Kitty'],['dog','🐶','Dog'],['heart','❤️','Heart'],['sun','☀️','Sun'],['moon','🌙','Moon'],['flower','🌸','Flower'],['butterfly','🦋','Butterfly'],['dinosaur','🦕','Dinosaur'],['rocket','🚀','Rocket'],['unicorn','🦄','Unicorn'],['trophy','🏆','Trophy'],['smiley','😊','Smiley'],['clap','👏','Applause'],['fire','🔥','Fire'],['gem','💎','Gem']]
+export const calendarSticker=id=>CALENDAR_STICKERS.find(s=>s[0]===id)||CALENDAR_STICKERS[0]

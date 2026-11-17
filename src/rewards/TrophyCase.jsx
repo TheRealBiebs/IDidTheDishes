@@ -1,36 +1,46 @@
+import TrophyCaseControls from './TrophyCaseControls'
+import {catType} from './cats/catalog'
 import CatArt from './cats/CatArt'
 import {TeamBadge} from '../HouseholdThemes'
-import {useId,useMemo} from 'react'
+import {useId,useMemo,useState} from 'react'
 import {trophyKind,trophyWord,trophyLayout,TROPHY_SHELVES} from './trophy-layout'
 import './trophies.css'
 
-export default function TrophyCase({name,wins=0,mode='points',color,trophies,compact=false,hideName=false}){
+export default function TrophyCase({name,wins=0,mode='points',color,trophies,appearance={},compact=false,hideName=false}){
+ const [selected,setSelected]=useState(null)
  const total=Array.isArray(trophies)?trophies.length:wins
  const kinds=Array.isArray(trophies)?[...new Set(trophies.map(t=>trophyKind(t.mode)))]:[]
  const kind=kinds.length>1?'mixed':kinds[0]||trophyKind(mode),layout=useMemo(()=>trophyLayout(total,{maxVisible:compact?45:75}),[total,compact])
  const palette='trophy-'+useId().replace(/[^a-zA-Z0-9_-]/g,'')
  const word=kind==='mixed'?'trophy':trophyWord(kind),objectName=layout.total===1?word:word==='chip trophy'?'chip trophies':word==='sleeping cat'?'sleeping cats':word==='trophy'?'trophies':word+'s'
- return <article className={`trophy-case trophies-${kind} trophy-stage-${layout.stage} ${compact?'trophy-case-compact':''}`} data-wins={layout.total} data-mode={kind} style={{'--case-accent':/^#[0-9a-f]{6}$/i.test(color||'')?color:'#c8a55b'}}>
+ return <article className={`trophy-case trophies-${kind} trophy-stage-${layout.stage} case-finish-${appearance.finish||'wood'} ${compact?'trophy-case-compact':''}`} data-wins={layout.total} data-mode={kind} style={{'--cabinet-frame':/^#[0-9a-f]{6}$/i.test(appearance.frame||'')?appearance.frame:undefined,'--cabinet-backdrop':/^#[0-9a-f]{6}$/i.test(appearance.backdrop||'')?appearance.backdrop:undefined,'--case-accent':/^#[0-9a-f]{6}$/i.test(color||'')?color:'#c8a55b'}}>
    {!hideName&&<div className="trophy-case-heading"><h3>{name}</h3><span className="trophy-win-count"><strong>{layout.total.toLocaleString()}</strong><small>weekly win{layout.total===1?'':'s'}</small></span></div>}
-   <div className="trophy-cabinet" role="img" aria-label={`${name}: ${layout.total} weekly win${layout.total===1?'':'s'}, ${layout.total} ${objectName}${layout.stage==='overstuffed'?', overstuffed display':layout.stage==='crowded'?', crowded shelves':''}`}>
+   <div className="trophy-cabinet" role="group" aria-label={`${name}: ${layout.total} weekly win${layout.total===1?'':'s'}, ${layout.total} ${objectName}${layout.stage==='overstuffed'?', overstuffed display':layout.stage==='crowded'?', crowded shelves':''}`}>
     <svg className="trophy-palette" aria-hidden="true"><defs><linearGradient id={`${palette}-gold`} x1="0" y1="0" x2="1" y2=".8"><stop stopColor="#fff0a5"/><stop offset=".4" stopColor="#e7b841"/><stop offset=".72" stopColor="#a56b19"/><stop offset="1" stopColor="#fbe395"/></linearGradient><linearGradient id={`${palette}-cat`} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#ffe0b8"/><stop offset="1" stopColor="#d89a63"/></linearGradient></defs></svg>
     <div className="trophy-case-interior">
      {kind==='stars'&&<div className="trophy-calendar-print" aria-hidden="true"><div className="trophy-calendar-title">WINNING WEEKS</div><div className="trophy-calendar-cells">{Array.from({length:15},(_,i)=><i key={i}/>)}</div></div>}
      {kind!=='stars'&&TROPHY_SHELF_MARKS.map((top,i)=><span className="trophy-shelf" key={i} style={{top}} aria-hidden="true"/>)}
-     {layout.items.map(item=><span key={trophies?.[item.id]?.id||item.id} className="trophy-item" data-earned-mode={trophyKind(trophies?.[item.id]?.mode||mode)} data-win-number={item.id+1} style={{left:`${item.x/3}%`,top:`${(kind==='stars'?TROPHY_SHELVES[2-item.shelf]+item.y-TROPHY_SHELVES[item.shelf]:item.y)/2.5}%`,transform:`translate(-50%,-100%) rotate(${item.angle}deg)`,zIndex:Math.round(item.y*3)+item.id}} aria-hidden="true"><TrophyArt kind={trophyKind(trophies?.[item.id]?.mode||mode)} palette={palette} appearance={trophies?.[item.id]}/></span>)}
-     {!layout.total&&<span className="trophy-case-empty" aria-hidden="true">Your first weekly win<br/>belongs here.</span>}
+     {layout.items.map(item=><button type="button" key={trophies?.[item.id]?.id||item.id} className="trophy-item" aria-label={'View '+trophyTitle(trophies?.[item.id]||{mode})} title={trophySummary(trophies?.[item.id]||{mode})} onMouseEnter={()=>setSelected(item.id)} onFocus={()=>setSelected(item.id)} onClick={()=>setSelected(item.id)} data-earned-mode={trophyKind(trophies?.[item.id]?.mode||mode)} data-win-number={item.id+1} style={{left:`${item.x/3}%`,top:`${(kind==='stars'?TROPHY_SHELVES[2-item.shelf]+item.y-TROPHY_SHELVES[item.shelf]:item.y)/2.5}%`,transform:`translate(-50%,-100%) rotate(${item.angle}deg)`,zIndex:Math.round(item.y*3)+item.id}}><TrophyArt kind={trophyKind(trophies?.[item.id]?.mode||mode)} palette={palette} appearance={trophies?.[item.id]}/></button>)}
+     {!layout.total&&<span className="trophy-case-empty" aria-hidden="true">No trophies to display yet</span>}
      {kind!=='stars'&&<div className="trophy-glass" aria-hidden="true"/>}
     </div>
     <div className="trophy-case-plaque" aria-hidden="true">{kind==='stars'?'★':kind==='cats'?'☾':kind==='poker'?'♠':'✦'} {layout.total.toLocaleString()} {layout.total===1?word:objectName}</div>
    </div>
+   {selected!==null&&<section className="trophy-detail" aria-label="Trophy details"><button className="icon-button" aria-label="Close trophy details" onClick={()=>setSelected(null)}>×</button><h4>{trophyTitle(trophies?.[selected]||{mode})}</h4><p>{trophySummary(trophies?.[selected]||{mode})}</p></section>}
    {layout.hidden>0&&<p className="trophy-overflow-note">{layout.items.length} displayed · {layout.hidden.toLocaleString()} more in the pile</p>}
  </article>
 }
 const TROPHY_SHELF_MARKS=['91.2%','62%','32.8%']
 
-export function TrophyCaseGrid({entries=[],mode='points',compact=false}){
- return <div className="trophy-case-grid">{entries.map(entry=><TrophyCase key={entry.id||entry.team_id} name={entry.name} wins={entry.weekly_points??entry.points??0} mode={mode} trophies={entry.trophies} color={entry.color} compact={compact}/>)}</div>
+export function TrophyCaseGrid({entries=[],mode='points',compact=false,householdId,preferredId}){
+ const [selected,setSelected]=useState(''),[styles,setStyles]=useState({})
+ const entry=entries.find(e=>(e.id||e.team_id)===selected)||entries.find(e=>(e.id||e.team_id)===preferredId)||entries[0]
+ if(!entry)return <TrophyCase name="Trophy case" trophies={[]} mode={mode}/>
+ const id=entry.id||entry.team_id
+ return <div className="single-trophy-case">{entries.length>1&&<label>Trophy case<select aria-label="Trophy case" value={id} onChange={e=>setSelected(e.target.value)}>{entries.map(e=><option key={e.id||e.team_id} value={e.id||e.team_id}>{e.name}</option>)}</select></label>}<TrophyCase key={id} name={entry.name} wins={entry.weekly_points??entry.points??0} mode={mode} trophies={entry.trophies} appearance={styles[id]||entry.appearance} color={entry.color} compact={compact}/>{householdId&&entry.can_customize&&<TrophyCaseControls key={'controls:'+id} householdId={householdId} entry={{...entry,appearance:styles[id]||entry.appearance}} onSaved={appearance=>setStyles(previous=>({...previous,[id]:appearance}))}/>}</div>
 }
+function trophyTitle(item){return item.cat_name||({wizard:'Wizard cup',poker:'Poker chip trophy',stars:'Calendar trophy',cats:catType(item.cat_type)[0]+' cat'})[trophyKind(item.mode)]}
+function trophySummary(item){return [item.cat_type!=null?catType(item.cat_type)[0]:'',item.won_on?'Won '+item.won_on:'Award date unavailable',item.week_start?'Week of '+item.week_start:'',item.points!=null?item.points+' points':'',item.chores!=null?item.chores+' chores':'',item.personal_points!=null?'Your points: '+item.personal_points:'',item.satisfied_days!=null?item.satisfied_days+' satisfied days (required '+(item.required_days||7)+')':''].filter(Boolean).join(' · ')}
 function TrophyArt({kind,palette,appearance={}}){
  if(kind==='cats')return <CatArt type={appearance.cat_type??0} sleeping small/>
  const gold=`url(#${palette}-gold)`,fur=`url(#${palette}-cat)`
