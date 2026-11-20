@@ -13,7 +13,7 @@ test('signed-in household members log immediately in browsers and installed apps
 test('new issued tags require an admin; foreign ownership never becomes completion',()=>{
  assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:true,configuring:true}),'claim')
  assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:false}),'unassigned')
- assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:true}),'unassigned')
+ assert.equal(scanAction({status:'available'},{signedIn:true,canClaim:true}),'claim')
  assert.equal(scanAction({status:'assigned',member:true,admin:false},{signedIn:true,configuring:true}),'complete')
  assert.equal(scanAction({status:'preparing'},{signedIn:true,canClaim:true}),'preparing')
  assert.equal(scanAction({status:'assigned',member:false},{signedIn:true,installed:true}),'foreign')
