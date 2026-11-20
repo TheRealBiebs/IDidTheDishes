@@ -20,7 +20,7 @@ import ChoreHistory from './ChoreHistory'
 import CooldownSettings from './stickers/CooldownSettings'
 import { automaticCooldown, cooldownMinutes, cooldownDuration } from './stickers/cooldown'
 import Brand from './Brand'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { supabase, configurationError } from './supabase'
 import { api, rpc, localDate, weekStart } from './api'
 import { isNative, authRedirectUrl, setNativeBarStyle } from './native'
@@ -50,6 +50,8 @@ import CompletionDetails, { CompletionDetailView } from './stickers/CompletionDe
 import { scanAction } from './stickers/routing'
 import StickerInfo, { StickerReleaseRequests } from './stickers/StickerInfo'
 import './stickers/stickers.css'
+
+const StickerWelcome = lazy(() => import('./marketing/Welcome'))
 
 const paths = {
   home: 'm3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z',
@@ -311,6 +313,7 @@ export default function App() {
   const currentScan=scanState?.identity===((session?.user.id||'public')+':'+route.tag+':'+scanConfigure.current)?scanState:null
   const weeklyHouse=houses.find(h=>h.id===(currentScan?.info?.member?currentScan.info.household_id:houseId))
   const weeklyCelebration=session&&weeklyHouse?<WeeklyCelebration key={weeklyHouse.id+session.user.id} household={weeklyHouse} enabled={!tutorialOpen&&!modal&&!busy&&(!route.tag||Boolean(currentScan&&!currentScan.loading))&&view!=='workshop'} renderDialog={props=><Modal {...props}/>} onCasino={result=>{if(route.tag)finishScan();setHouseId(result.household_id);setCasinoVisit(n=>n+1);setView('dashboard')}} onInspect={result=>{if(route.tag)finishScan();setHouseId(result.household_id);setWeeklyFocus(result);setView('household')}}/>:null
+  if(route.tag&&!tagAuthMode&&!session&&scanAction(currentScan?.info,{signedIn:false})==='welcome')return <Suspense fallback={<p role="status" style={{padding:30}}>Opening Chip In…</p>}><StickerWelcome appHref={tagLink(route.tag)} onOpenApp={()=>setTagAuthMode('login')}/></Suspense>
   if(route.tag&&(!tagAuthMode||session))return <TagScanPage key={(session?.user.id||'public')+route.tag} token={route.tag} info={currentScan?.info} loading={!currentScan||currentScan.loading} error={currentScan?.error} completion={currentScan?.completion} session={session} houses={houses} configure={scanConfigure.current} initialTarget={scanTarget.current} busy={busy} onDone={finishScan} onSignIn={setTagAuthMode} onHouseholds={tagHouseholds} onChores={()=>{setPendingSticker(route.tag);finishScan();setView('chores')}} onLog={logCurrentScan} weeklyCelebration={weeklyCelebration} onSaved={updated=>setScanState(previous=>previous?.completion?.id===updated.id?{...previous,completion:updated}:previous)} renderTagForm={props=><TagForm {...props}/>} onClaimed={async id=>{await loadHouses(id);finishScan();setView('chores');notify('Sticker claimed and configured. No writing is needed.')}} onSaveConfiguration={async params=>{await rpc('save_chore_rewards',params);finishScan();notify('Chore configuration saved.')}}/>
   if(!session)return <>{route.tag&&<div className="tag-auth-banner"><span>Your sticker will be here after sign-in.</span><button className="text-button" onClick={()=>setTagAuthMode(null)}>Back to sticker</button></div>}<Auth initialMode={tagAuthMode||'login'} onMessage={notify} invite={route.invite} theme={theme}/>{toast&&<Toast toast={toast} onClose={()=>setToast(null)}/>}</>
   const unread=notifications.filter(n=>!n.read_at).length

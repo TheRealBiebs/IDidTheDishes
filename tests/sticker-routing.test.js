@@ -24,3 +24,5 @@ test('the starter catalog has twelve stable, distinct valid chores',()=>{
  assert.equal(new Set(STARTER_CHORES.map(c=>c.key)).size,12)
  assert.ok(STARTER_CHORES.every(c=>c.name.length<=100&&c.points>=1&&c.points<=1000&&c.limit>=1&&c.limit<=100))
 })
+
+test('only logged-out scans of valid unclaimed chips open the marketing welcome page',()=>{assert.equal(scanAction({status:'available'},{signedIn:false}),'welcome');assert.equal(scanAction({status:'available'},{signedIn:true}),'unassigned');assert.equal(scanAction({status:'assigned',member:false},{signedIn:false}),'public');assert.equal(scanAction({status:'preparing'},{signedIn:false}),'public');assert.equal(scanAction({status:'invalid'},{signedIn:false}),'invalid');assert.equal(scanAction(null,{signedIn:false}),'invalid')})
